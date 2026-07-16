@@ -1,0 +1,103 @@
+// Vue semaine : 7 colonnes (lundi → dimanche) sur desktop, liste verticale
+// par jour sur mobile. Chaque réservation est un bloc avec les heures de
+// départ et de retour. Composant serveur.
+
+import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
+import { CALENDAR_STATUS_COLORS } from "@/lib/core/labels";
+import { cn } from "@/lib/utils";
+import type { CalendarDay, CalendarEntry } from "./calendar-data";
+
+const WEEKDAY_LABELS = [
+  "lundi",
+  "mardi",
+  "mercredi",
+  "jeudi",
+  "vendredi",
+  "samedi",
+  "dimanche",
+];
+
+const DAY_LABEL_FORMATTER = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+function dayLabel(day: CalendarDay): string {
+  return DAY_LABEL_FORMATTER.format(
+    new Date(Date.UTC(day.date.year, day.date.month - 1, day.date.day))
+  );
+}
+
+function BookingBlock({ entry }: { entry: CalendarEntry }) {
+  return (
+    <Link
+      href={`/bookings/${entry.id}`}
+      title={`${entry.bookingNumber} · ${entry.customerName}${
+        entry.conflict ? " — Conflit possible" : ""
+      }`}
+      className={cn(
+        "block min-w-0 rounded-md px-2 py-1.5 text-xs transition-opacity hover:opacity-80",
+        CALENDAR_STATUS_COLORS[entry.status],
+        entry.conflict && "ring-2 ring-red-500"
+      )}
+    >
+      <span className="flex items-center gap-1 font-semibold">
+        {entry.conflict && (
+          <AlertTriangle className="size-3 shrink-0 text-red-600" aria-hidden />
+        )}
+        <span className="truncate">{entry.bookingNumber}</span>
+      </span>
+      <span className="mt-0.5 block truncate">{entry.customerName}</span>
+      <span className="mt-0.5 block text-[11px] opacity-80">
+        {entry.startTime} → {entry.endTime}
+      </span>
+    </Link>
+  );
+}
+
+export function WeekView({ days }: { days: CalendarDay[] }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200">
+      <div className="grid grid-cols-1 gap-px md:grid-cols-7">
+        {days.map((day, index) => (
+          <section key={day.key} className="bg-white">
+            <header
+              className={cn(
+                "flex items-center gap-2 border-b border-neutral-100 px-3 py-2 md:flex-col md:items-center md:gap-0.5",
+                day.isToday && "bg-sky-50"
+              )}
+            >
+              <span className="text-xs font-medium text-neutral-500">
+                {WEEKDAY_LABELS[index % 7]}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center rounded-full px-2 py-0.5 text-sm font-semibold",
+                  day.isToday
+                    ? "bg-sky-700 text-white"
+                    : "text-neutral-900"
+                )}
+              >
+                {dayLabel(day)}
+              </span>
+            </header>
+
+            <div className="flex min-h-16 flex-col gap-1.5 p-2 md:min-h-72">
+              {day.entries.length === 0 ? (
+                <p className="px-1 py-0.5 text-xs text-neutral-400">
+                  Aucune réservation
+                </p>
+              ) : (
+                day.entries.map((entry) => (
+                  <BookingBlock key={entry.id} entry={entry} />
+                ))
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
