@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  /* Bleu profond — couleur principale de marque */
+  --color-navy-50: #eef3f8;
+  --color-navy-100: #d9e4ef;
+  --color-navy-200: #b3c8de;
+  --color-navy-300: #82a3c4;
+  --color-navy-400: #4f7aa5;
+  --color-navy-500: #2e5a86;
+  --color-navy-600: #1d4368;
+  --color-navy-700: #143552;
+  --color-navy-800: #0d2a42;
+  --color-navy-900: #0a2540;
+  --color-navy-950: #061729;
+
+  /* Turquoise lagon — couleur d'accent */
+  --color-lagoon-50: #ecfcfd;
+  --color-lagoon-100: #d1f5f8;
+  --color-lagoon-200: #a8eaf1;
+  --color-lagoon-300: #6fd8e5;
+  --color-lagoon-400: #35bdd1;
+  --color-lagoon-500: #0ca6b8;
+  --color-lagoon-600: #0b869b;
+  --color-lagoon-700: #0e6c7e;
+  --color-lagoon-800: #125867;
+  --color-lagoon-900: #134a57;
+
+  /* Gris clair — surfaces */
+  --color-mist-50: #f8fafc;
+  --color-mist-100: #f2f5f9;
+  --color-mist-200: #e6ebf2;
+  --color-mist-300: #d3dbe6;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-navy-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-lagoon-200);
+  color: var(--color-navy-900);
+}
