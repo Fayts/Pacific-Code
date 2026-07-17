@@ -1,15 +1,18 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { NextResponse, type NextRequest } from "next/server";
 
-// Convention Next.js 16 : proxy.ts remplace middleware.ts.
-// Rafraîchit la session Supabase et protège les routes privées.
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+// Mode MOCK : les données et la session vivent dans le navigateur
+// (localStorage), il n'y a donc aucune session côté serveur à vérifier.
+// La protection des routes est assurée côté client par <RequireSession>.
+//
+// Lors du branchement Supabase Cloud (post-MVP), ce proxy reprendra le
+// rafraîchissement de session (@supabase/ssr) — voir la branche
+// archive/supabase-v1 pour l'implémentation de référence.
+export function proxy(_request: NextRequest) {
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Tout sauf les ressources statiques.
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

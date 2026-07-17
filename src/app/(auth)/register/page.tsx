@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,15 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { signUp } from "@/server/actions/auth";
+import { useAppData } from "@/components/providers/app-data-provider";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { BUSINESS_TYPE_LABELS } from "@/lib/core/labels";
 import type { BusinessType } from "@/lib/types/database";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
-  const [emailSent, setEmailSent] = useState(false);
 
   const {
     register,
@@ -53,39 +52,24 @@ export default function RegisterPage() {
 
   const onSubmit = (values: RegisterInput) => {
     startTransition(async () => {
-      const result = await signUp(values);
-      if (!result.ok) {
-        toast.error(result.error);
+      try {
+        await provider.auth.signUp({
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          companyName: values.companyName,
+          businessType: values.businessType,
+        });
+      } catch {
+        toast.error("Création du compte impossible, réessayez.");
         return;
       }
-      if (result.data.needsEmailConfirmation) {
-        setEmailSent(true);
-        return;
-      }
-      router.push("/onboarding");
-      router.refresh();
+      toast.success(
+        `Bienvenue ! Votre espace « ${values.companyName} » est prêt.`
+      );
+      router.push("/dashboard");
     });
   };
-
-  if (emailSent) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-          <span className="flex size-12 items-center justify-center rounded-full bg-emerald-50">
-            <MailCheck className="size-6 text-emerald-700" aria-hidden />
-          </span>
-          <h2 className="text-lg font-semibold">Vérifiez votre boîte mail</h2>
-          <p className="text-sm text-neutral-600 max-w-sm">
-            Un lien de confirmation vient de vous être envoyé. Cliquez dessus
-            pour activer votre compte, puis configurez votre entreprise.
-          </p>
-          <Link href="/login" className="text-sm text-sky-700 hover:underline">
-            Retour à la connexion
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
@@ -96,6 +80,12 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <p className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          <strong>Version de démonstration</strong> — le compte est créé
+          instantanément sur cet appareil, sans email de confirmation. Votre
+          espace arrive pré-rempli de données fictives pour explorer
+          l&apos;application.
+        </p>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"

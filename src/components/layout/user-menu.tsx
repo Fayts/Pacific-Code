@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { signOut } from "@/server/actions/auth";
+import { useAppData } from "@/components/providers/app-data-provider";
 import { formatInitials } from "@/lib/core/format";
 
 export function UserMenu({
@@ -21,7 +22,16 @@ export function UserMenu({
   userName: string;
   email: string;
 }) {
+  const router = useRouter();
+  const { provider } = useAppData();
   const [, startTransition] = useTransition();
+
+  const handleSignOut = () => {
+    startTransition(async () => {
+      await provider.auth.signOut();
+      router.replace("/login");
+    });
+  };
 
   return (
     <DropdownMenu>
@@ -41,17 +51,12 @@ export function UserMenu({
           <p className="truncate text-xs text-neutral-500">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          render={<Link href="/settings" />}
-        >
+        <DropdownMenuItem render={<Link href="/settings" />}>
           <Settings className="size-4" aria-hidden />
           Paramètres
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => startTransition(() => signOut())}
-        >
+        <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
           <LogOut className="size-4" aria-hidden />
           Déconnexion
         </DropdownMenuItem>

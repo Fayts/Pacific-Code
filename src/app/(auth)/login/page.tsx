@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useTransition } from "react";
+import { Suspense, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -16,15 +16,21 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn } from "@/server/actions/auth";
+import { useAppData } from "@/components/providers/app-data-provider";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { provider, session, loading } = useAppData();
   const [pending, startTransition] = useTransition();
 
-  const urlError = searchParams.get("error");
+  // Déjà connecté → direction l'application.
+  useEffect(() => {
+    if (!loading && session) {
+      router.replace("/dashboard");
+    }
+  }, [loading, session, router]);
 
   const {
     register,
@@ -37,17 +43,17 @@ function LoginForm() {
 
   const onSubmit = (values: LoginInput) => {
     startTransition(async () => {
-      const result = await signIn(values);
-      if (!result.ok) {
-        toast.error(result.error);
+      try {
+        await provider.auth.signIn(values.email, values.password);
+      } catch {
+        toast.error("Connexion impossible, réessayez.");
         return;
       }
       const next = searchParams.get("next");
       // Uniquement un chemin interne ("//" serait interprété comme une URL externe).
       const safeNext =
         next && next.startsWith("/") && !next.startsWith("//") ? next : null;
-      router.push(safeNext ?? result.data.redirectTo);
-      router.refresh();
+      router.push(safeNext ?? "/dashboard");
     });
   };
 
@@ -60,12 +66,11 @@ function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {urlError && (
-          <p className="mb-4 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">
-            Le lien utilisé est invalide ou a expiré. Connectez-vous ou
-            demandez un nouveau lien.
-          </p>
-        )}
+        <p className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          <strong>Version de démonstration</strong> — entrez n&apos;importe
+          quel email et mot de passe : aucune donnée réelle n&apos;est
+          utilisée.
+        </p>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"
