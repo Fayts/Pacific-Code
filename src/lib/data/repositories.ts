@@ -1,0 +1,190 @@
+// ============================================================
+// Couche Repository — le contrat unique d'accès aux données.
+//
+//   UI → Services → Repository → Source de données
+//
+// Aujourd'hui la source est un adapter MOCK (localStorage, données
+// fictives). Demain, un adapter Supabase implémentera ces mêmes
+// interfaces sans toucher à l'UI ni aux services.
+// ============================================================
+
+import type {
+  Booking,
+  BookingItem,
+  BookingStatus,
+  BookingStatusHistory,
+  Customer,
+  DepositStatus,
+  EquipmentCategory,
+  EquipmentItem,
+  EquipmentStatus,
+  Organization,
+  PaymentStatus,
+  AvailabilityResult,
+  BusinessType,
+} from "@/lib/types/database";
+
+// ------------------------------------------------------------
+// Session (authentification simulée en mode mock)
+// ------------------------------------------------------------
+
+export type SessionUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type Session = { user: SessionUser } | null;
+
+export type SignUpInput = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  businessType: BusinessType;
+};
+
+// ------------------------------------------------------------
+// Entrées normalisées (créations / mises à jour)
+// ------------------------------------------------------------
+
+export type EquipmentDraft = {
+  name: string;
+  categoryId: string | null;
+  internalRef: string;
+  description: string;
+  dailyPrice: number;
+  depositAmount: number;
+  quantityTotal: number;
+  minRentalDays: number;
+  status: EquipmentStatus;
+  usageInstructions: string;
+  internalNotes: string;
+};
+
+export type CustomerDraft = {
+  type: "individual" | "company";
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  address: string;
+  idNumber: string;
+  internalNotes: string;
+};
+
+/** Réservation normalisée : dates déjà converties en instants UTC (ISO). */
+export type BookingDraft = {
+  customerId: string;
+  items: Array<{ equipmentId: string; quantity: number }>;
+  startAtIso: string;
+  endAtIso: string;
+  durationDays: number;
+  discountAmount: number;
+  extraFeesAmount: number;
+  depositAmount: number;
+  notes: string;
+  status: Extract<BookingStatus, "draft" | "pending" | "confirmed">;
+};
+
+export type BookingWithRelations = Booking & {
+  customer: Customer | null;
+  items: Array<BookingItem & { equipment: EquipmentItem | null }>;
+};
+
+// ------------------------------------------------------------
+// Interfaces des repositories
+// ------------------------------------------------------------
+
+export interface AuthRepository {
+  getSession(): Promise<Session>;
+  signIn(email: string, password: string): Promise<Session>;
+  signUp(input: SignUpInput): Promise<Session>;
+  signOut(): Promise<void>;
+}
+
+export interface OrganizationRepository {
+  get(): Promise<Organization>;
+  update(patch: Partial<Organization>): Promise<Organization>;
+}
+
+export interface CategoryRepository {
+  list(): Promise<EquipmentCategory[]>;
+  create(name: string, description?: string): Promise<EquipmentCategory>;
+  remove(id: string): Promise<void>;
+}
+
+export interface EquipmentRepository {
+  list(options?: { includeArchived?: boolean }): Promise<EquipmentItem[]>;
+  get(id: string): Promise<EquipmentItem | null>;
+  create(draft: EquipmentDraft): Promise<EquipmentItem>;
+  update(id: string, draft: EquipmentDraft): Promise<EquipmentItem | null>;
+  setStatus(id: string, status: EquipmentStatus): Promise<void>;
+  archive(id: string): Promise<{ ok: boolean; error?: string }>;
+  unarchive(id: string): Promise<void>;
+  duplicate(id: string): Promise<EquipmentItem | null>;
+}
+
+export interface CustomerRepository {
+  list(options?: { includeArchived?: boolean }): Promise<Customer[]>;
+  get(id: string): Promise<Customer | null>;
+  create(draft: CustomerDraft): Promise<Customer>;
+  update(id: string, draft: CustomerDraft): Promise<Customer | null>;
+  archive(id: string): Promise<{ ok: boolean; error?: string }>;
+  unarchive(id: string): Promise<void>;
+}
+
+export interface BookingRepository {
+  list(): Promise<BookingWithRelations[]>;
+  get(id: string): Promise<BookingWithRelations | null>;
+  history(bookingId: string): Promise<BookingStatusHistory[]>;
+  /**
+   * Quantité disponible d'un matériel sur [startAtIso, endAtIso).
+   * Statuts bloquants : pending, confirmed, in_progress.
+   */
+  checkAvailability(params: {
+    equipmentId: string;
+    startAtIso: string;
+    endAtIso: string;
+    quantity: number;
+    excludeBookingId?: string | null;
+  }): Promise<AvailabilityResult>;
+  create(
+    draft: BookingDraft,
+    pricing: { lineTotals: number[]; subtotal: number; total: number }
+  ): Promise<Booking>;
+  update(
+    id: string,
+    draft: BookingDraft,
+    pricing: { lineTotals: number[]; subtotal: number; total: number }
+  ): Promise<Booking | null>;
+  changeStatus(
+    id: string,
+    to: BookingStatus,
+    note?: string
+  ): Promise<{ ok: boolean; error?: string }>;
+  setPaymentStatus(id: string, status: PaymentStatus): Promise<void>;
+  setDepositStatus(id: string, status: DepositStatus): Promise<void>;
+  duplicate(id: string): Promise<Booking | null>;
+}
+
+// ------------------------------------------------------------
+// Fournisseur agrégé
+// ------------------------------------------------------------
+
+export interface DataProvider {
+  /** "mock" aujourd'hui, "supabase" plus tard. */
+  readonly kind: "mock" | "supabase";
+  auth: AuthRepository;
+  organization: OrganizationRepository;
+  categories: CategoryRepository;
+  equipment: EquipmentRepository;
+  customers: CustomerRepository;
+  bookings: BookingRepository;
+  /** Réabonne l'UI aux changements de données (retourne un désabonnement). */
+  subscribe(listener: () => void): () => void;
+  /** Restaure le jeu de données de démonstration. */
+  resetDemoData(): Promise<void>;
+}
