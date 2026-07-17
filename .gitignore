@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Keep the documented env template
 !.env.example
+
+# Reglages Claude Code personnels
+.claude/settings.local.json
