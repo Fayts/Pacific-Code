@@ -53,6 +53,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Hydratation initiale depuis le store externe (localStorage) : les
+    // setState n'interviennent qu'après résolution des promesses.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     reload().finally(() => {
       if (!cancelled) setLoading(false);
     });

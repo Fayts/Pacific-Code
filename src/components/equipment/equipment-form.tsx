@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,11 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CategoryDialog } from "@/components/equipment/category-dialog";
+import { useAppData } from "@/components/providers/app-data-provider";
 import {
-  addEquipmentImage,
   createEquipment,
   updateEquipment,
-} from "@/server/actions/equipment";
+} from "@/lib/services/equipment-service";
 import { equipmentSchema, type EquipmentInput } from "@/lib/validations/equipment";
 import { EQUIPMENT_STATUS } from "@/lib/core/labels";
 import type { EquipmentItem, EquipmentStatus } from "@/lib/types/database";
@@ -53,9 +52,9 @@ export function EquipmentForm({
   equipment,
 }: EquipmentFormProps) {
   const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
   const [categoryList, setCategoryList] = useState(categories);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const {
     register,
@@ -113,40 +112,24 @@ export function EquipmentForm({
   const onSubmit = (values: EquipmentInput) => {
     startTransition(async () => {
       if (equipment) {
-        const result = await updateEquipment(equipment.id, values);
+        const result = await updateEquipment(equipment.id, values, provider);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
         toast.success("Matériel mis à jour");
         router.push(`/equipment/${equipment.id}`);
-        router.refresh();
         return;
       }
 
-      const result = await createEquipment(values);
+      const result = await createEquipment(values, provider);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
 
-      // Upload de la photo principale, optionnel, après la création.
-      if (photoFile) {
-        const formData = new FormData();
-        formData.append("equipmentId", result.data.equipmentId);
-        formData.append("image", photoFile);
-        formData.append("isPrimary", "true");
-        const upload = await addEquipmentImage(formData);
-        if (!upload.ok) {
-          toast.error(
-            `Matériel créé, mais la photo n'a pas pu être enregistrée : ${upload.error}`
-          );
-        }
-      }
-
       toast.success("Matériel créé");
       router.push(`/equipment/${result.data.equipmentId}`);
-      router.refresh();
     });
   };
 
@@ -385,27 +368,10 @@ export function EquipmentForm({
         </CardContent>
       </Card>
 
-      {!equipment && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Photo principale</CardTitle>
-            <CardDescription>
-              Facultatif — PNG, JPG ou WebP, 5 Mo maximum. Vous pourrez ajouter
-              d&apos;autres photos après la création.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              aria-label="Photo principale"
-              onChange={(event) =>
-                setPhotoFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </CardContent>
-        </Card>
-      )}
+      <p className="text-sm text-neutral-500">
+        Version de démonstration : l&apos;ajout de photos sera disponible une
+        fois le stockage en ligne connecté.
+      </p>
 
       <div className="flex items-center justify-end gap-2">
         <Button

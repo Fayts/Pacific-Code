@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 // Mode MOCK : les données et la session vivent dans le navigateur
 // (localStorage), il n'y a donc aucune session côté serveur à vérifier.
@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Lors du branchement Supabase Cloud (post-MVP), ce proxy reprendra le
 // rafraîchissement de session (@supabase/ssr) — voir la branche
 // archive/supabase-v1 pour l'implémentation de référence.
-export function proxy(_request: NextRequest) {
+export function proxy() {
   return NextResponse.next();
 }
 

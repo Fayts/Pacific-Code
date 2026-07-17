@@ -1,28 +1,10 @@
-import { requireOrgContext } from "@/lib/auth/context";
-import { createClient } from "@/lib/supabase/server";
-import { PageHeader } from "@/components/shared/page-header";
-import { EquipmentForm } from "@/components/equipment/equipment-form";
+import type { Metadata } from "next";
+import { EquipmentNewClient } from "@/components/equipment/equipment-new-client";
 
-export default async function NewEquipmentPage() {
-  const context = await requireOrgContext();
-  const supabase = await createClient();
+export const metadata: Metadata = {
+  title: "Nouveau matériel",
+};
 
-  const { data: categories } = await supabase
-    .from("equipment_categories")
-    .select("id, name")
-    .eq("organization_id", context.organization.id)
-    .order("name", { ascending: true });
-
-  return (
-    <>
-      <PageHeader
-        title="Nouveau matériel"
-        description="Ajoutez un matériel à votre parc de location."
-      />
-      <EquipmentForm
-        categories={categories ?? []}
-        currency={context.organization.currency}
-      />
-    </>
-  );
+export default function NewEquipmentPage() {
+  return <EquipmentNewClient />;
 }

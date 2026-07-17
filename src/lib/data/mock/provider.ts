@@ -6,7 +6,6 @@ import type {
   AvailabilityResult,
   Booking,
   BookingStatus,
-  BookingStatusHistory,
   Customer,
   DepositStatus,
   EquipmentCategory,
@@ -20,7 +19,6 @@ import { canTransition, isBlockingStatus } from "@/lib/core/booking-status";
 import { formatCustomerName } from "@/lib/core/format";
 import type {
   AuthRepository,
-  BookingDraft,
   BookingRepository,
   BookingWithRelations,
   CategoryRepository,

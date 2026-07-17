@@ -17,7 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createCategory } from "@/server/actions/equipment";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { createCategory } from "@/lib/services/equipment-service";
 
 // Création rapide d'une catégorie depuis le formulaire matériel.
 export function CategoryDialog({
@@ -25,6 +26,7 @@ export function CategoryDialog({
 }: {
   onCreated: (category: { id: string; name: string }) => void;
 }) {
+  const { provider } = useAppData();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -34,7 +36,10 @@ export function CategoryDialog({
     const trimmed = name.trim();
     if (!trimmed) return;
     startTransition(async () => {
-      const result = await createCategory({ name: trimmed, description });
+      const result = await createCategory(
+        { name: trimmed, description },
+        provider
+      );
       if (!result.ok) {
         toast.error(result.error);
         return;
