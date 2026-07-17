@@ -355,7 +355,15 @@ export async function addEquipmentImage(
   if (file.size > 5 * 1024 * 1024) {
     return actionError("Photo trop volumineuse (5 Mo maximum)");
   }
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+  // L'extension est dérivée du type MIME validé, jamais du nom de fichier
+  // (qui pourrait contenir des séparateurs de chemin).
+  const IMAGE_EXTENSIONS: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+  };
+  const ext = IMAGE_EXTENSIONS[file.type];
+  if (!ext) {
     return actionError("Format accepté : PNG, JPG ou WebP");
   }
 
@@ -372,7 +380,6 @@ export async function addEquipmentImage(
     return actionError("Matériel introuvable");
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${context.organization.id}/${equipmentId}/${crypto.randomUUID()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage

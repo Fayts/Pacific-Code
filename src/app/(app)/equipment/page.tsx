@@ -3,6 +3,7 @@ import { Package, Plus, SearchX } from "lucide-react";
 import { requireOrgContext } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { computeEquipmentDisplay } from "@/lib/core/equipment";
+import { sanitizeSearchTerm } from "@/lib/core/search";
 import { formatDateTime, formatMoney } from "@/lib/core/format";
 import { equipmentImageUrl } from "@/lib/core/storage";
 import type { EquipmentDisplayStatus } from "@/lib/core/labels";
@@ -93,8 +94,7 @@ export default async function EquipmentPage({
     equipmentQuery = equipmentQuery.eq("category_id", categoryFilter);
   }
 
-  // Nettoyage des caractères réservés de la syntaxe .or() de PostgREST.
-  const term = q.replace(/[,()"'\\]/g, " ").trim();
+  const term = sanitizeSearchTerm(q);
   if (term) {
     equipmentQuery = equipmentQuery.or(
       `name.ilike.%${term}%,internal_ref.ilike.%${term}%`

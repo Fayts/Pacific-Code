@@ -15,12 +15,8 @@ import { updateOrganizationLogo } from "@/server/actions/organizations";
 import { formatInitials } from "@/lib/core/format";
 import type { Organization } from "@/lib/types/database";
 
-const ACCEPTED_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/svg+xml",
-];
+// Pas de SVG (risque XSS via bucket public) — aligné sur le serveur.
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_SIZE_BYTES = 2 * 1024 * 1024;
 
 export function LogoUploader({
@@ -45,7 +41,7 @@ export function LogoUploader({
     if (!file) return;
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      toast.error("Format accepté : PNG, JPG, WebP ou SVG");
+      toast.error("Format accepté : PNG, JPG ou WebP");
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
@@ -108,7 +104,7 @@ export function LogoUploader({
               {pending ? "Téléversement…" : "Choisir une image"}
             </Button>
             <p className="text-xs text-neutral-500">
-              PNG, JPG, WebP ou SVG — 2 Mo maximum.
+              PNG, JPG ou WebP — 2 Mo maximum.
             </p>
           </div>
         </div>

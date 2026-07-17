@@ -43,7 +43,10 @@ function LoginForm() {
         return;
       }
       const next = searchParams.get("next");
-      router.push(next && next.startsWith("/") ? next : result.data.redirectTo);
+      // Uniquement un chemin interne ("//" serait interprété comme une URL externe).
+      const safeNext =
+        next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+      router.push(safeNext ?? result.data.redirectTo);
       router.refresh();
     });
   };

@@ -141,12 +141,19 @@ export async function updateOrganizationLogo(
   if (file.size > 2 * 1024 * 1024) {
     return actionError("Logo trop volumineux (2 Mo maximum)");
   }
-  if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
-    return actionError("Format accepté : PNG, JPG, WebP ou SVG");
+  // Pas de SVG : servi depuis un bucket public, un SVG peut embarquer du
+  // script (XSS). L'extension vient du type MIME validé, pas du nom de fichier.
+  const LOGO_EXTENSIONS: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+  };
+  const ext = LOGO_EXTENSIONS[file.type];
+  if (!ext) {
+    return actionError("Format accepté : PNG, JPG ou WebP");
   }
 
   const supabase = await createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const path = `${context.organization.id}/logo-${Date.now()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage

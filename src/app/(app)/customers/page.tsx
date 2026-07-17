@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Plus, Users } from "lucide-react";
 import { requireOrgContext } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeSearchTerm } from "@/lib/core/search";
 import {
   formatCustomerName,
   formatDate,
@@ -56,8 +57,7 @@ export default async function CustomersPage({
 
   if (type) query = query.eq("type", type);
 
-  // Caractères spéciaux PostgREST neutralisés avant l'ilike.
-  const term = q.replace(/[%,()*\\]/g, " ").trim();
+  const term = sanitizeSearchTerm(q);
   if (term) {
     const pattern = `%${term}%`;
     query = query.or(

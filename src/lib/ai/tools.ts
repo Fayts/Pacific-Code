@@ -9,6 +9,7 @@ import { tool } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import type { OrgContext } from "@/lib/auth/context";
 import { parseLocalDateTimeInput, toLocalDateTimeInput } from "@/lib/core/dates";
+import { sanitizeSearchTerm } from "@/lib/core/search";
 import {
   computeBookingTotals,
   computeDurationDays,
@@ -122,9 +123,10 @@ export async function createAssistantToolkit(context: OrgContext) {
         .is("archived_at", null)
         .order("name")
         .limit(25);
-      if (input.query) {
+      const equipmentTerm = sanitizeSearchTerm(input.query ?? "");
+      if (equipmentTerm) {
         query = query.or(
-          `name.ilike.%${input.query}%,internal_ref.ilike.%${input.query}%`
+          `name.ilike.%${equipmentTerm}%,internal_ref.ilike.%${equipmentTerm}%`
         );
       }
       if (input.status && input.status !== "all") {
@@ -167,13 +169,15 @@ export async function createAssistantToolkit(context: OrgContext) {
     },
 
     async searchCustomers(input: z.infer<typeof searchCustomersInput>) {
+      const term = sanitizeSearchTerm(input.query);
+      if (!term) return [];
       const { data, error } = await supabase
         .from("customers")
         .select("id, type, first_name, last_name, company_name, email, phone")
         .eq("organization_id", orgId)
         .is("archived_at", null)
         .or(
-          `first_name.ilike.%${input.query}%,last_name.ilike.%${input.query}%,company_name.ilike.%${input.query}%,email.ilike.%${input.query}%,phone.ilike.%${input.query}%`
+          `first_name.ilike.%${term}%,last_name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`
         )
         .order("last_name")
         .limit(15);

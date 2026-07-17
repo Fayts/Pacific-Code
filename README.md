@@ -98,8 +98,10 @@ Dans le **SQL Editor** du dashboard Supabase, exécutez dans l'ordre les fichier
 2. `20260715000002_functions.sql` — fonctions métier (disponibilité, numérotation, création d'organisation)
 3. `20260715000003_rls.sql` — Row Level Security + buckets de stockage
 4. `20260715000004_booking_transactions.sql` — création/modification de réservation atomiques
+5. `20260715000005_harden_functions.sql` — révocation des exécutions anonymes
+6. `20260715000006_review_hardening.sql` — contrôles d'appartenance client/matériel, politiques resserrées
 
-*(Déjà appliquées sur le projet pilote.)*
+*(1 à 5 déjà appliquées sur le projet pilote ; **la n°6 reste à exécuter** dans le SQL Editor.)*
 
 ### 3. Données de démonstration (facultatif)
 

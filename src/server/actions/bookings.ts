@@ -308,9 +308,24 @@ export async function updateBooking(
   );
   const equipmentById = new Map(equipment.map((e) => [e.id, e]));
   for (const item of parsed.data.items) {
-    if (!equipmentById.get(item.equipmentId)) {
+    const row = equipmentById.get(item.equipmentId);
+    if (!row) {
       return actionError("Un des matériels sélectionnés est introuvable");
     }
+    if (row.archived_at) {
+      return actionError(`« ${row.name} » est archivé et ne peut être loué`);
+    }
+  }
+
+  const minDays = requiredMinRentalDays(
+    parsed.data.items.map(
+      (i) => equipmentById.get(i.equipmentId)!.min_rental_days
+    )
+  );
+  if (durationDays < minDays) {
+    return actionError(
+      `Durée minimale de location : ${minDays} jour${minDays > 1 ? "s" : ""}`
+    );
   }
 
   const totals = computeBookingTotals({
@@ -405,15 +420,24 @@ export async function changeBookingStatus(
       .eq("booking_id", booking.id);
 
     for (const item of items ?? []) {
-      const { data } = await supabase.rpc("check_equipment_availability", {
-        p_equipment_id: item.equipment_id,
-        p_start_at: booking.start_at,
-        p_end_at: booking.end_at,
-        p_quantity: item.quantity,
-        p_exclude_booking_id: booking.id,
-      });
+      const { data, error: availabilityError } = await supabase.rpc(
+        "check_equipment_availability",
+        {
+          p_equipment_id: item.equipment_id,
+          p_start_at: booking.start_at,
+          p_end_at: booking.end_at,
+          p_quantity: item.quantity,
+          p_exclude_booking_id: booking.id,
+        }
+      );
       const availability = data as unknown as AvailabilityResult | null;
-      if (availability && !availability.available) {
+      // Fail-closed : une vérification qui échoue n'autorise jamais la transition.
+      if (availabilityError || !availability) {
+        return actionError(
+          "Vérification de disponibilité impossible — réessayez"
+        );
+      }
+      if (!availability.available) {
         const name =
           (item.equipment_items as unknown as { name: string } | null)?.name ??
           "Un matériel";
