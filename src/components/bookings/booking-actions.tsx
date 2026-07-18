@@ -16,10 +16,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useAppData } from "@/components/providers/app-data-provider";
 import {
   changeBookingStatus,
   duplicateBooking,
-} from "@/server/actions/bookings";
+} from "@/lib/services/booking-service";
 import {
   BOOKING_TRANSITIONS,
   TRANSITION_LABELS,
@@ -47,12 +48,16 @@ export function BookingActions({
   editable: boolean;
 }) {
   const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
 
   const transitions = BOOKING_TRANSITIONS[status] ?? [];
 
   const applyStatus = async (to: BookingStatus) => {
-    const result = await changeBookingStatus({ bookingId, status: to });
+    const result = await changeBookingStatus(
+      { bookingId, status: to },
+      provider
+    );
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -60,12 +65,11 @@ export function BookingActions({
     toast.success(
       to === "cancelled" ? "Réservation annulée" : "Statut mis à jour"
     );
-    router.refresh();
   };
 
   const duplicate = () => {
     startTransition(async () => {
-      const result = await duplicateBooking(bookingId);
+      const result = await duplicateBooking(bookingId, provider);
       if (!result.ok) {
         toast.error(result.error);
         return;

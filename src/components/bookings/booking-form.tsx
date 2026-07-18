@@ -34,12 +34,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { EquipmentStatusBadge } from "@/components/shared/status-badge";
+import { useAppData } from "@/components/providers/app-data-provider";
 import {
   checkBookingAvailability,
   createBooking,
   updateBooking,
   type ItemAvailability,
-} from "@/server/actions/bookings";
+} from "@/lib/services/booking-service";
 import { parseLocalDateTimeInput } from "@/lib/core/dates";
 import {
   computeBookingTotals,
@@ -126,6 +127,7 @@ export function BookingForm({
   initialValues?: BookingFormInitialValues;
 }) {
   const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
 
   const tz = organization.timezone;
@@ -259,12 +261,15 @@ export function BookingForm({
     };
     const seq = ++requestSeq.current;
     const timer = setTimeout(async () => {
-      const response = await checkBookingAvailability({
-        items: payload.items,
-        startAt: payload.startAt,
-        endAt: payload.endAt,
-        excludeBookingId: mode === "edit" ? (bookingId ?? null) : null,
-      });
+      const response = await checkBookingAvailability(
+        {
+          items: payload.items,
+          startAt: payload.startAt,
+          endAt: payload.endAt,
+          excludeBookingId: mode === "edit" ? (bookingId ?? null) : null,
+        },
+        provider
+      );
       if (seq !== requestSeq.current) return;
       if (response.ok) {
         setAvailabilityResult({ key: checkKey, kind: "ok", ...response.data });
@@ -277,7 +282,7 @@ export function BookingForm({
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [checkKey, mode, bookingId]);
+  }, [checkKey, mode, bookingId, provider]);
 
   const currentResult =
     checkKey && availabilityResult && availabilityResult.key === checkKey
@@ -355,16 +360,15 @@ export function BookingForm({
 
     startTransition(async () => {
       if (mode === "edit" && bookingId) {
-        const result = await updateBooking(bookingId, payload);
+        const result = await updateBooking(bookingId, payload, provider);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
         toast.success("Réservation mise à jour");
         router.push(`/bookings/${bookingId}`);
-        router.refresh();
       } else {
-        const result = await createBooking(payload);
+        const result = await createBooking(payload, provider);
         if (!result.ok) {
           toast.error(result.error);
           return;

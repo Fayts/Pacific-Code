@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createCustomer } from "@/server/actions/customers";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { createCustomer } from "@/lib/services/customer-service";
 import { customerSchema, type CustomerInput } from "@/lib/validations/customer";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/core/labels";
 import type { CustomerType } from "@/lib/types/database";
@@ -50,6 +51,7 @@ export function NewCustomerDialog({
   onOpenChange: (open: boolean) => void;
   onCreated: (customer: CustomerOption) => void;
 }) {
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
 
   const {
@@ -67,7 +69,7 @@ export function NewCustomerDialog({
 
   const onSubmit = (values: CustomerInput) => {
     startTransition(async () => {
-      const result = await createCustomer(values);
+      const result = await createCustomer(values, provider);
       if (!result.ok) {
         toast.error(result.error);
         return;

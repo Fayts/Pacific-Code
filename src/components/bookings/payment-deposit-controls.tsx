@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,10 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAppData } from "@/components/providers/app-data-provider";
 import {
-  changeDepositStatus,
-  changePaymentStatus,
-} from "@/server/actions/bookings";
+  setDepositStatus,
+  setPaymentStatus,
+} from "@/lib/services/booking-service";
 import { DEPOSIT_STATUS, PAYMENT_STATUS } from "@/lib/core/labels";
 import type { DepositStatus, PaymentStatus } from "@/lib/types/database";
 
@@ -28,7 +28,7 @@ export function PaymentDepositControls({
   paymentStatus: PaymentStatus;
   depositStatus: DepositStatus;
 }) {
-  const router = useRouter();
+  const { provider } = useAppData();
   const [payment, setPayment] = useState<PaymentStatus>(paymentStatus);
   const [deposit, setDeposit] = useState<DepositStatus>(depositStatus);
   const [paymentPending, startPaymentTransition] = useTransition();
@@ -38,17 +38,13 @@ export function PaymentDepositControls({
     const previous = payment;
     setPayment(value);
     startPaymentTransition(async () => {
-      const result = await changePaymentStatus({
-        bookingId,
-        paymentStatus: value,
-      });
+      const result = await setPaymentStatus(bookingId, value, provider);
       if (!result.ok) {
         setPayment(previous);
         toast.error(result.error);
         return;
       }
       toast.success("Statut de paiement mis à jour");
-      router.refresh();
     });
   };
 
@@ -56,17 +52,13 @@ export function PaymentDepositControls({
     const previous = deposit;
     setDeposit(value);
     startDepositTransition(async () => {
-      const result = await changeDepositStatus({
-        bookingId,
-        depositStatus: value,
-      });
+      const result = await setDepositStatus(bookingId, value, provider);
       if (!result.ok) {
         setDeposit(previous);
         toast.error(result.error);
         return;
       }
       toast.success("Statut de caution mis à jour");
-      router.refresh();
     });
   };
 
