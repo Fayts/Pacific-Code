@@ -20,15 +20,15 @@ export default function CalendarLoading() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <div className="grid grid-cols-7 gap-px border-b border-neutral-200 bg-neutral-50 p-2">
+      <div className="mt-4 overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+        <div className="grid grid-cols-7 gap-px border-b border-border bg-muted/50 p-2">
           {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} className="mx-auto h-3 w-8" />
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-px bg-neutral-200">
+        <div className="grid grid-cols-7 gap-px bg-border">
           {Array.from({ length: 35 }).map((_, i) => (
-            <div key={i} className="min-h-14 bg-white p-1.5 sm:min-h-28">
+            <div key={i} className="min-h-14 bg-card p-1.5 sm:min-h-28">
               <div className="flex justify-end">
                 <Skeleton className="size-6 rounded-full" />
               </div>

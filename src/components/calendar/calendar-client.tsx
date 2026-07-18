@@ -118,20 +118,24 @@ export function CalendarClient() {
 
   const equipment = data.equipment;
 
-  const bookings = data.bookings
+  const periodBookings = data.bookings
     .filter((b) => b.start_at < endIso && b.end_at > startIso)
-    .filter((b) => !statusFilter || b.status === statusFilter)
     .map(toCalendarBooking);
+
+  const bookings = periodBookings.filter(
+    (b) => !statusFilter || b.status === statusFilter
+  );
 
   const equipmentValue =
     equipmentParam && equipment.some((item) => item.id === equipmentParam)
       ? equipmentParam
       : "all";
 
-  // Conflits calculés sur toutes les réservations de la période (avant le
-  // filtre matériel) pour ne pas masquer un chevauchement.
+  // Conflits calculés sur toutes les réservations de la période, avant les
+  // filtres statut ET matériel : filtrer sur « Confirmée » ne doit pas
+  // masquer un conflit avec une réservation « À confirmer » chevauchante.
   const conflictIds = computeConflictBookingIds(
-    bookings,
+    periodBookings,
     new Map(equipment.map((item) => [item.id, item.quantity_total]))
   );
 
@@ -207,7 +211,7 @@ export function CalendarClient() {
         />
 
         {visibleBookings.length === 0 && (
-          <p className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
+          <p className="rounded-md border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
             Aucune réservation sur cette période.
           </p>
         )}

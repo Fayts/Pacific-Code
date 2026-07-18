@@ -22,6 +22,12 @@ type Filters = {
   archived: boolean;
 };
 
+const TYPE_ITEMS = [
+  { value: "all", label: "Tous les types" },
+  { value: "individual", label: "Particuliers" },
+  { value: "company", label: "Professionnels" },
+];
+
 /** Barre de recherche + filtres de la liste des clients (synchronisés avec l'URL). */
 export function CustomersFilters({ q, type, archived }: Filters) {
   const router = useRouter();
@@ -61,29 +67,32 @@ export function CustomersFilters({ q, type, archived }: Filters) {
     >
       <div className="relative w-full sm:w-72">
         <Search
-          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-neutral-400"
+          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground/70"
           aria-hidden
         />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher nom, société, email, téléphone…"
-          className="bg-white pl-8"
+          className="bg-card pl-8"
           aria-label="Rechercher un client"
         />
       </div>
 
       <Select
+        items={TYPE_ITEMS}
         value={type}
         onValueChange={(v) => apply({ type: (v as Filters["type"]) ?? "all" })}
       >
-        <SelectTrigger className="w-44 bg-white" aria-label="Filtrer par type">
+        <SelectTrigger className="w-44 bg-card" aria-label="Filtrer par type">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Tous les types</SelectItem>
-          <SelectItem value="individual">Particuliers</SelectItem>
-          <SelectItem value="company">Professionnels</SelectItem>
+          {TYPE_ITEMS.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
@@ -95,7 +104,7 @@ export function CustomersFilters({ q, type, archived }: Filters) {
         />
         <Label
           htmlFor="customers-archived"
-          className="text-sm font-normal text-neutral-600"
+          className="text-sm font-normal text-muted-foreground"
         >
           Clients archivés
         </Label>

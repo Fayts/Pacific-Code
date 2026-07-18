@@ -164,7 +164,7 @@ export function EquipmentDetailClient({ id }: { id: string }) {
             </h1>
             <EquipmentStatusBadge status={display.status} />
           </div>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {[
               item.internal_ref ? `Réf. ${item.internal_ref}` : null,
               categoryName,
@@ -201,19 +201,19 @@ export function EquipmentDetailClient({ id }: { id: string }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-neutral-900">
+                <h3 className="text-sm font-medium text-foreground">
                   Description
                 </h3>
-                <p className="mt-1 text-sm whitespace-pre-line text-neutral-600">
+                <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">
                   {item.description || "Aucune description."}
                 </p>
               </div>
               {item.usage_instructions && (
                 <div>
-                  <h3 className="text-sm font-medium text-neutral-900">
+                  <h3 className="text-sm font-medium text-foreground">
                     Instructions d&apos;utilisation
                   </h3>
-                  <p className="mt-1 text-sm whitespace-pre-line text-neutral-600">
+                  <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">
                     {item.usage_instructions}
                   </p>
                 </div>
@@ -250,17 +250,17 @@ export function EquipmentDetailClient({ id }: { id: string }) {
                         <TableCell>
                           <Link
                             href={`/bookings/${booking.id}`}
-                            className="font-medium text-sky-700 hover:underline"
+                            className="font-medium text-primary hover:underline"
                           >
                             {booking.booking_number}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-neutral-600">
+                        <TableCell className="text-muted-foreground">
                           {booking.customer
                             ? formatCustomerName(booking.customer)
                             : "—"}
                         </TableCell>
-                        <TableCell className="text-neutral-600">
+                        <TableCell className="text-muted-foreground">
                           {formatDateTime(
                             booking.start_at,
                             organization.timezone
@@ -268,7 +268,7 @@ export function EquipmentDetailClient({ id }: { id: string }) {
                           →{" "}
                           {formatDateTime(booking.end_at, organization.timezone)}
                         </TableCell>
-                        <TableCell className="text-right text-neutral-600">
+                        <TableCell className="text-right text-muted-foreground">
                           {line.quantity}
                         </TableCell>
                         <TableCell>
@@ -298,36 +298,36 @@ export function EquipmentDetailClient({ id }: { id: string }) {
             <CardContent>
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Prix journalier</dt>
+                  <dt className="text-muted-foreground">Prix journalier</dt>
                   <dd className="font-medium">
                     {formatMoney(item.daily_price, organization.currency)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Caution</dt>
+                  <dt className="text-muted-foreground">Caution</dt>
                   <dd className="font-medium">
                     {formatMoney(item.deposit_amount, organization.currency)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Quantité totale</dt>
+                  <dt className="text-muted-foreground">Quantité totale</dt>
                   <dd className="font-medium">{item.quantity_total}</dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Disponible maintenant</dt>
+                  <dt className="text-muted-foreground">Disponible maintenant</dt>
                   <dd className="font-medium">
                     {display.availableNow} / {item.quantity_total}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Durée minimale</dt>
+                  <dt className="text-muted-foreground">Durée minimale</dt>
                   <dd className="font-medium">
                     {item.min_rental_days} jour
                     {item.min_rental_days > 1 ? "s" : ""}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Prochaine dispo</dt>
+                  <dt className="text-muted-foreground">Prochaine dispo</dt>
                   <dd className="font-medium">{nextAvailability}</dd>
                 </div>
               </dl>
@@ -342,13 +342,13 @@ export function EquipmentDetailClient({ id }: { id: string }) {
             <CardContent>
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">CA généré</dt>
+                  <dt className="text-muted-foreground">CA généré</dt>
                   <dd className="font-medium">
                     {formatMoney(revenue, organization.currency)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-neutral-500">Nombre de locations</dt>
+                  <dt className="text-muted-foreground">Nombre de locations</dt>
                   <dd className="font-medium">{rentalIds.size}</dd>
                 </div>
               </dl>
@@ -365,16 +365,16 @@ export function EquipmentDetailClient({ id }: { id: string }) {
                 <div className="space-y-1 text-sm">
                   <Link
                     href={`/bookings/${nextBooking.booking.id}`}
-                    className="font-medium text-sky-700 hover:underline"
+                    className="font-medium text-primary hover:underline"
                   >
                     {nextBooking.booking.booking_number}
                   </Link>
-                  <p className="text-neutral-600">
+                  <p className="text-muted-foreground">
                     {nextBooking.booking.customer
                       ? formatCustomerName(nextBooking.booking.customer)
                       : "—"}
                   </p>
-                  <p className="text-neutral-500">
+                  <p className="text-muted-foreground">
                     {formatDateTime(
                       nextBooking.booking.start_at,
                       organization.timezone
@@ -390,7 +390,7 @@ export function EquipmentDetailClient({ id }: { id: string }) {
                   </div>
                 </div>
               ) : (
-                <p className="flex items-center gap-2 text-sm text-neutral-500">
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Package className="size-4" aria-hidden />
                   Aucune réservation à venir.
                 </p>
@@ -400,14 +400,14 @@ export function EquipmentDetailClient({ id }: { id: string }) {
 
           {/* Notes internes, carte discrète */}
           {item.internal_notes && (
-            <Card className="bg-neutral-50 ring-neutral-200">
+            <Card className="bg-muted/50 ring-pc-deep/[0.08]">
               <CardHeader>
-                <CardTitle className="text-sm text-neutral-700">
+                <CardTitle className="text-sm text-foreground">
                   Notes internes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm whitespace-pre-line text-neutral-600">
+                <p className="text-sm whitespace-pre-line text-muted-foreground">
                   {item.internal_notes}
                 </p>
               </CardContent>

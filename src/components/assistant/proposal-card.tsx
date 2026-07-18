@@ -92,36 +92,36 @@ export function ProposalCard({
   const header =
     proposal.kind === "booking_proposal" ? (
       <>
-        <CalendarPlus className="size-4 text-sky-700" aria-hidden />
+        <CalendarPlus className="size-4 text-primary" aria-hidden />
         Nouvelle réservation
       </>
     ) : proposal.kind === "customer_proposal" ? (
       <>
-        <UserPlus className="size-4 text-sky-700" aria-hidden />
+        <UserPlus className="size-4 text-primary" aria-hidden />
         Nouveau client
       </>
     ) : (
       <>
-        <Wrench className="size-4 text-sky-700" aria-hidden />
+        <Wrench className="size-4 text-primary" aria-hidden />
         Changement de statut
       </>
     );
 
   return (
-    <div className="max-w-[85%] rounded-lg border border-sky-200 bg-sky-50/60 p-3.5 text-sm">
-      <p className="flex items-center gap-2 font-medium text-neutral-900">
+    <div className="max-w-[85%] rounded-lg border border-primary/25 bg-primary/[0.05] p-3.5 text-sm">
+      <p className="flex items-center gap-2 font-medium text-foreground">
         {header}
       </p>
 
-      <div className="mt-2 space-y-1 text-neutral-700">
+      <div className="mt-2 space-y-1 text-foreground">
         {proposal.kind === "booking_proposal" && (
           <>
             <p>
-              <span className="text-neutral-500">Client :</span>{" "}
+              <span className="text-muted-foreground">Client :</span>{" "}
               {proposal.summary.customerName}
             </p>
             <p>
-              <span className="text-neutral-500">Matériel :</span>{" "}
+              <span className="text-muted-foreground">Matériel :</span>{" "}
               {proposal.summary.items
                 .map(
                   (i) =>
@@ -130,17 +130,17 @@ export function ProposalCard({
                 .join(", ")}
             </p>
             <p>
-              <span className="text-neutral-500">Période :</span>{" "}
+              <span className="text-muted-foreground">Période :</span>{" "}
               {proposal.summary.startAt.replace("T", " à ")} →{" "}
               {proposal.summary.endAt.replace("T", " à ")} (
               {proposal.summary.durationDays} jour
               {proposal.summary.durationDays > 1 ? "s" : ""})
             </p>
             <p>
-              <span className="text-neutral-500">Prix estimé :</span>{" "}
+              <span className="text-muted-foreground">Prix estimé :</span>{" "}
               <strong>{formatMoney(proposal.summary.total, currency)}</strong>
               {" — "}
-              <span className="text-neutral-500">Caution :</span>{" "}
+              <span className="text-muted-foreground">Caution :</span>{" "}
               {formatMoney(proposal.summary.deposit, currency)}
             </p>
             {proposal.summary.warnings.map((warning, i) => (
@@ -155,18 +155,18 @@ export function ProposalCard({
         {proposal.kind === "customer_proposal" && (
           <>
             <p>
-              <span className="text-neutral-500">Nom :</span>{" "}
+              <span className="text-muted-foreground">Nom :</span>{" "}
               {proposal.summary.displayName}
             </p>
             {proposal.payload.email && (
               <p>
-                <span className="text-neutral-500">Email :</span>{" "}
+                <span className="text-muted-foreground">Email :</span>{" "}
                 {proposal.payload.email}
               </p>
             )}
             {proposal.payload.phone && (
               <p>
-                <span className="text-neutral-500">Téléphone :</span>{" "}
+                <span className="text-muted-foreground">Téléphone :</span>{" "}
                 {proposal.payload.phone}
               </p>
             )}
@@ -175,7 +175,7 @@ export function ProposalCard({
 
         {proposal.kind === "equipment_status_proposal" && (
           <p>
-            <span className="text-neutral-500">Matériel :</span>{" "}
+            <span className="text-muted-foreground">Matériel :</span>{" "}
             {proposal.summary.equipmentName} →{" "}
             <strong>{proposal.summary.statusLabel}</strong>
           </p>
@@ -189,16 +189,16 @@ export function ProposalCard({
             {result.link && (
               <Link
                 href={result.link.href}
-                className="ml-2 text-sky-700 underline underline-offset-2"
+                className="ml-2 text-primary underline underline-offset-2"
               >
                 {result.link.label}
               </Link>
             )}
           </span>
         ) : result?.status === "dismissed" ? (
-          <span className="text-neutral-500">Ignoré</span>
+          <span className="text-muted-foreground">Ignoré</span>
         ) : stale ? (
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-muted-foreground">
             Proposition issue d&apos;une conversation précédente — redemandez à
             l&apos;assistant pour la régénérer.
           </span>

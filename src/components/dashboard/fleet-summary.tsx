@@ -33,14 +33,14 @@ const SEGMENTS: {
   {
     key: "reserved",
     label: "Réservés",
-    barClassName: "bg-blue-500",
-    dotClassName: "bg-blue-500",
+    barClassName: "bg-pc-turquoise",
+    dotClassName: "bg-pc-turquoise",
   },
   {
     key: "rented",
     label: "En location",
-    barClassName: "bg-violet-500",
-    dotClassName: "bg-violet-500",
+    barClassName: "bg-orange-400",
+    dotClassName: "bg-orange-400",
   },
   {
     key: "maintenance",
@@ -51,8 +51,8 @@ const SEGMENTS: {
   {
     key: "unavailable",
     label: "Indisponibles",
-    barClassName: "bg-neutral-400",
-    dotClassName: "bg-neutral-400",
+    barClassName: "bg-rose-400",
+    dotClassName: "bg-rose-400",
   },
 ];
 
@@ -71,19 +71,19 @@ export function FleetSummary({ counts }: { counts: FleetCounts }) {
       </CardHeader>
       <CardContent>
         {counts.total === 0 ? (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             Ajoutez votre premier matériel pour suivre la disponibilité du
             parc.{" "}
             <Link
               href="/equipment/new"
-              className="font-medium text-sky-700 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Ajouter un matériel
             </Link>
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
+            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
               {SEGMENTS.filter((s) => counts[s.key] > 0).map((s) => (
                 <div
                   key={s.key}
@@ -109,11 +109,11 @@ export function FleetSummary({ counts }: { counts: FleetCounts }) {
                       )}
                       aria-hidden
                     />
-                    <span className="truncate text-neutral-600">
+                    <span className="truncate text-muted-foreground">
                       {s.label}
                     </span>
                   </span>
-                  <span className="font-medium tabular-nums text-neutral-900">
+                  <span className="font-medium tabular-nums text-foreground">
                     {counts[s.key]}
                   </span>
                 </li>

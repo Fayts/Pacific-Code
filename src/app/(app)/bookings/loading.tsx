@@ -18,14 +18,14 @@ export default function BookingsLoading() {
           <Skeleton className="h-8 w-full sm:w-44" />
         </div>
 
-        <div className="overflow-hidden rounded-xl bg-white ring-1 ring-foreground/10">
-          <div className="border-b border-neutral-100 px-4 py-3">
+        <div className="overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+          <div className="border-b border-border/60 px-4 py-3">
             <Skeleton className="h-4 w-full max-w-2xl" />
           </div>
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-4 border-b border-neutral-100 px-4 py-3 last:border-0"
+              className="flex items-center gap-4 border-b border-border/60 px-4 py-3 last:border-0"
             >
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-32" />

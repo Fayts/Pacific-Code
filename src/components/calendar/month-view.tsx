@@ -20,7 +20,7 @@ function BookingChip({ entry }: { entry: CalendarEntry }) {
         entry.conflict ? " — Conflit possible" : ""
       }`}
       className={cn(
-        "flex min-w-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] leading-4 font-medium transition-opacity hover:opacity-80",
+        "flex min-w-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] leading-4 font-medium transition hover:brightness-95",
         CALENDAR_STATUS_COLORS[entry.status],
         entry.conflict && "ring-2 ring-red-500"
       )}
@@ -37,19 +37,19 @@ function BookingChip({ entry }: { entry: CalendarEntry }) {
 
 export function MonthView({ days }: { days: CalendarDay[] }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-      <div className="grid grid-cols-7 border-b border-neutral-200 bg-neutral-50">
+    <div className="overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+      <div className="grid grid-cols-7 border-b border-border bg-muted/50">
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="px-1 py-1.5 text-center text-xs font-medium text-neutral-500"
+            className="px-1 py-1.5 text-center text-xs font-medium text-muted-foreground"
           >
             {label}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-px bg-neutral-200">
+      <div className="grid grid-cols-7 gap-px bg-border">
         {days.map((day) => {
           const hidden = day.entries.length - MAX_CHIPS;
           return (
@@ -57,7 +57,7 @@ export function MonthView({ days }: { days: CalendarDay[] }) {
               key={day.key}
               className={cn(
                 "min-h-14 p-1 sm:min-h-28 sm:p-1.5",
-                day.isCurrentMonth ? "bg-white" : "bg-neutral-50"
+                day.isCurrentMonth ? "bg-card" : "bg-muted/50"
               )}
             >
               <div className="flex justify-end">
@@ -65,10 +65,10 @@ export function MonthView({ days }: { days: CalendarDay[] }) {
                   className={cn(
                     "inline-flex size-6 items-center justify-center rounded-full text-xs",
                     day.isToday
-                      ? "bg-sky-700 font-semibold text-white"
+                      ? "bg-primary font-semibold text-primary-foreground"
                       : day.isCurrentMonth
-                        ? "text-neutral-700"
-                        : "text-neutral-400"
+                        ? "text-foreground"
+                        : "text-muted-foreground/70"
                   )}
                 >
                   {day.date.day}
@@ -81,7 +81,7 @@ export function MonthView({ days }: { days: CalendarDay[] }) {
                   <BookingChip key={entry.id} entry={entry} />
                 ))}
                 {hidden > 0 && (
-                  <span className="px-1.5 text-[11px] text-neutral-500">
+                  <span className="px-1.5 text-[11px] text-muted-foreground">
                     +{hidden} {hidden > 1 ? "autres" : "autre"}
                   </span>
                 )}
@@ -101,7 +101,7 @@ export function MonthView({ days }: { days: CalendarDay[] }) {
                   />
                 ))}
                 {day.entries.length > MAX_DOTS && (
-                  <span className="text-[10px] leading-none text-neutral-500">
+                  <span className="text-[10px] leading-none text-muted-foreground">
                     +{day.entries.length - MAX_DOTS}
                   </span>
                 )}

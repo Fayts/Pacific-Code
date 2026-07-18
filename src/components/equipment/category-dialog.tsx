@@ -56,7 +56,7 @@ export function CategoryDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button type="button" variant="ghost" size="xs" className="text-sky-700" />
+          <Button type="button" variant="ghost" size="xs" className="text-primary" />
         }
       >
         <Plus aria-hidden />

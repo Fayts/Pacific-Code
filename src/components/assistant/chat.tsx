@@ -106,10 +106,10 @@ export function AssistantChat({ organization }: { organization: Organization }) 
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-1 flex-col rounded-lg border border-neutral-200 bg-white">
-      <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2">
-        <span className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-          <Sparkles className="size-4 text-sky-700" aria-hidden />
+    <div className="flex min-h-[60vh] flex-1 flex-col rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Sparkles className="size-4 text-primary" aria-hidden />
           Assistant (mode démo)
         </span>
         <Button
@@ -126,12 +126,12 @@ export function AssistantChat({ organization }: { organization: Organization }) 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <span className="flex size-12 items-center justify-center rounded-full bg-sky-50">
-              <Sparkles className="size-6 text-sky-700" aria-hidden />
+            <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="size-6 text-primary" aria-hidden />
             </span>
             <div>
               <p className="font-medium">Comment puis-je vous aider ?</p>
-              <p className="mt-1 text-sm text-neutral-500 max-w-sm">
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm">
                 Je consulte vos matériels, clients et réservations, et je peux
                 préparer des actions que vous confirmez.
               </p>
@@ -142,7 +142,7 @@ export function AssistantChat({ organization }: { organization: Organization }) 
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-sky-50 hover:border-sky-200 hover:text-sky-800"
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/[0.06] hover:text-primary"
                 >
                   {s}
                 </button>
@@ -157,8 +157,8 @@ export function AssistantChat({ organization }: { organization: Organization }) 
               className={cn(
                 "max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed",
                 message.role === "user"
-                  ? "ml-auto bg-sky-700 text-white"
-                  : "bg-neutral-100 text-neutral-900"
+                  ? "ml-auto bg-gradient-to-br from-pc-lagoon to-pc-turquoise text-white"
+                  : "bg-card text-foreground ring-1 ring-pc-deep/[0.08]"
               )}
             >
               {renderContent(message.content)}
@@ -178,8 +178,8 @@ export function AssistantChat({ organization }: { organization: Organization }) 
         ))}
 
         {pending && (
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            <span className="size-2 animate-pulse rounded-full bg-sky-600" />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="size-2 animate-pulse rounded-full bg-primary" />
             L&apos;assistant réfléchit…
           </div>
         )}
@@ -187,7 +187,7 @@ export function AssistantChat({ organization }: { organization: Organization }) 
       </div>
 
       <form
-        className="flex items-end gap-2 border-t border-neutral-200 p-3"
+        className="flex items-end gap-2 border-t border-border p-3"
         onSubmit={(event) => {
           event.preventDefault();
           send(input);

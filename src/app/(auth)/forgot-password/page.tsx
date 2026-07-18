@@ -10,10 +10,10 @@ export const metadata = { title: "Mot de passe oublié" };
 // Mode démonstration : aucun email n'est envoyé.
 export default function ForgotPasswordPage() {
   return (
-    <Card>
+    <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-900/10 backdrop-blur-md">
       <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-        <span className="flex size-12 items-center justify-center rounded-full bg-sky-50">
-          <Info className="size-6 text-sky-700" aria-hidden />
+        <span className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-600 via-cyan-500 to-teal-500 text-white shadow-lg shadow-cyan-600/25">
+          <Info className="size-6" aria-hidden />
         </span>
         <h2 className="text-lg font-semibold">Version de démonstration</h2>
         <p className="max-w-sm text-sm text-neutral-600">

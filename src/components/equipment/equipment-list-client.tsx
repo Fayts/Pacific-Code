@@ -50,8 +50,8 @@ function normalize(value: string): string {
 function Thumbnail() {
   // Pas de stockage de photos en mode démo : visuel de substitution.
   return (
-    <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-neutral-100">
-      <Package className="size-5 text-neutral-400" aria-hidden />
+    <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-muted">
+      <Package className="size-5 text-muted-foreground/50" aria-hidden />
     </span>
   );
 }
@@ -223,7 +223,7 @@ export function EquipmentListClient() {
       ) : (
         <>
           {/* Tableau desktop */}
-          <div className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -245,17 +245,17 @@ export function EquipmentListClient() {
                     <TableCell>
                       <Link
                         href={`/equipment/${item.id}`}
-                        className="font-medium text-neutral-900 hover:underline"
+                        className="font-medium text-foreground hover:underline"
                       >
                         {item.name}
                       </Link>
                       {item.internal_ref && (
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-muted-foreground">
                           Réf. {item.internal_ref}
                         </p>
                       )}
                     </TableCell>
-                    <TableCell className="text-neutral-600">
+                    <TableCell className="text-muted-foreground">
                       {item.category_id
                         ? (categoryNames.get(item.category_id) ?? "—")
                         : "—"}
@@ -263,13 +263,13 @@ export function EquipmentListClient() {
                     <TableCell className="text-right font-medium">
                       {formatMoney(item.daily_price, organization.currency)}
                     </TableCell>
-                    <TableCell className="text-right text-neutral-600">
+                    <TableCell className="text-right text-muted-foreground">
                       {formatMoney(item.deposit_amount, organization.currency)}
                     </TableCell>
                     <TableCell>
                       <EquipmentStatusBadge status={display.status} />
                     </TableCell>
-                    <TableCell className="text-neutral-600">
+                    <TableCell className="text-muted-foreground">
                       {nextAvailability}
                     </TableCell>
                   </TableRow>
@@ -284,16 +284,16 @@ export function EquipmentListClient() {
               <Link
                 key={item.id}
                 href={`/equipment/${item.id}`}
-                className="flex gap-3 rounded-lg border border-neutral-200 bg-white p-3"
+                className="flex gap-3 rounded-xl bg-card p-3 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-pc-deep/[0.06]"
               >
                 <Thumbnail />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-neutral-900">
+                      <p className="truncate font-medium text-foreground">
                         {item.name}
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         {[
                           item.internal_ref ? `Réf. ${item.internal_ref}` : null,
                           item.category_id
@@ -309,14 +309,14 @@ export function EquipmentListClient() {
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                     <span className="font-medium">
                       {formatMoney(item.daily_price, organization.currency)}
-                      <span className="font-normal text-neutral-500"> / jour</span>
+                      <span className="font-normal text-muted-foreground"> / jour</span>
                     </span>
-                    <span className="text-neutral-500">
+                    <span className="text-muted-foreground">
                       Caution{" "}
                       {formatMoney(item.deposit_amount, organization.currency)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Prochaine dispo : {nextAvailability}
                   </p>
                 </div>

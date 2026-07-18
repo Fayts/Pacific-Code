@@ -117,7 +117,7 @@ export function CalendarToolbar({
         </Button>
       </div>
 
-      <h2 className="min-w-0 truncate text-base font-semibold text-neutral-900 md:text-lg">
+      <h2 className="min-w-0 truncate text-base font-semibold text-foreground md:text-lg">
         {title}
       </h2>
 
@@ -125,7 +125,7 @@ export function CalendarToolbar({
         <div
           role="group"
           aria-label="Changer de vue"
-          className="inline-flex items-center rounded-lg bg-neutral-100 p-0.5"
+          className="inline-flex items-center rounded-lg bg-muted p-0.5"
         >
           <button
             type="button"
@@ -134,8 +134,8 @@ export function CalendarToolbar({
             className={cn(
               "rounded-md px-2.5 py-1 text-sm transition-colors",
               view === "month"
-                ? "bg-white font-medium text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
+                ? "bg-card font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             Mois
@@ -147,8 +147,8 @@ export function CalendarToolbar({
             className={cn(
               "rounded-md px-2.5 py-1 text-sm transition-colors",
               view === "week"
-                ? "bg-white font-medium text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
+                ? "bg-card font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             Semaine
@@ -162,7 +162,7 @@ export function CalendarToolbar({
         >
           <SelectTrigger
             aria-label="Filtrer par matériel"
-            className="w-44 bg-white"
+            className="w-44 bg-card"
           >
             <SelectValue />
           </SelectTrigger>
@@ -183,7 +183,7 @@ export function CalendarToolbar({
         >
           <SelectTrigger
             aria-label="Filtrer par statut"
-            className="w-40 bg-white"
+            className="w-40 bg-card"
           >
             <SelectValue />
           </SelectTrigger>

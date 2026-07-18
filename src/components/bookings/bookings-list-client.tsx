@@ -155,10 +155,10 @@ export function BookingsListClient() {
         ) : (
           <>
             {/* Tableau (desktop) */}
-            <div className="hidden overflow-hidden rounded-xl bg-white ring-1 ring-foreground/10 md:block">
+            <div className="hidden overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] md:block">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-neutral-50/60 hover:bg-neutral-50/60">
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead>Numéro</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Matériels</TableHead>
@@ -185,7 +185,7 @@ export function BookingsListClient() {
                         <TableCell>
                           <Link
                             href={`/bookings/${booking.id}`}
-                            className="font-medium text-sky-700 hover:underline"
+                            className="font-medium text-primary hover:text-primary/80 hover:underline"
                           >
                             {booking.booking_number}
                           </Link>
@@ -197,16 +197,16 @@ export function BookingsListClient() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className="block max-w-48 truncate text-neutral-600"
+                            className="block max-w-48 truncate text-muted-foreground"
                             title={equipmentNames}
                           >
                             {equipmentNames || "—"}
                           </span>
                         </TableCell>
-                        <TableCell className="text-neutral-600">
+                        <TableCell className="text-muted-foreground">
                           {formatDateTime(booking.start_at, tz)}
                         </TableCell>
-                        <TableCell className="text-neutral-600">
+                        <TableCell className="text-muted-foreground">
                           {formatDateTime(booking.end_at, tz)}
                         </TableCell>
                         <TableCell className="text-right font-medium tabular-nums">
@@ -243,10 +243,10 @@ export function BookingsListClient() {
                   <li key={booking.id}>
                     <Link
                       href={`/bookings/${booking.id}`}
-                      className="block rounded-xl bg-white p-4 ring-1 ring-foreground/10 transition-colors hover:bg-neutral-50"
+                      className="block rounded-xl bg-card p-4 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] transition duration-300 hover:-translate-y-0.5 hover:bg-muted/50 hover:shadow-md hover:shadow-pc-deep/[0.06]"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-sky-700">
+                        <span className="font-medium text-primary">
                           {booking.booking_number}
                         </span>
                         <BookingStatusBadge status={derived} />
@@ -257,11 +257,11 @@ export function BookingsListClient() {
                           : "—"}
                       </p>
                       {equipmentNames && (
-                        <p className="truncate text-sm text-neutral-500">
+                        <p className="truncate text-sm text-muted-foreground">
                           {equipmentNames}
                         </p>
                       )}
-                      <p className="mt-2 text-sm text-neutral-600">
+                      <p className="mt-2 text-sm text-muted-foreground">
                         {formatDateTime(booking.start_at, tz)}
                         {" → "}
                         {formatDateTime(booking.end_at, tz)}
@@ -281,7 +281,7 @@ export function BookingsListClient() {
               })}
             </ul>
 
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-muted-foreground">
               {bookings.length} réservation{bookings.length > 1 ? "s" : ""}
             </p>
           </>

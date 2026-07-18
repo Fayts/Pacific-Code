@@ -15,6 +15,7 @@ import type {
   PaymentStatus,
 } from "@/lib/types/database";
 import { periodsOverlap } from "@/lib/core/dates";
+import { computeBookingTotals } from "@/lib/core/pricing";
 import { canTransition, isBlockingStatus } from "@/lib/core/booking-status";
 import { formatCustomerName } from "@/lib/core/format";
 import type {
@@ -757,6 +758,21 @@ export class MockDataProvider implements DataProvider {
       if (!source) return null;
       const items = db.bookingItems.filter((bi) => bi.booking_id === id);
       if (items.length === 0) return null;
+      // create() relit les prix journaliers du catalogue actuel : on
+      // recalcule donc les totaux au lieu de copier ceux de la source,
+      // sinon la fiche dupliquée affiche prix × qté × jours ≠ total ligne
+      // dès que le tarif a changé entre-temps.
+      const totals = computeBookingTotals({
+        items: items.map((bi) => ({
+          dailyPrice:
+            db.equipment.find((e) => e.id === bi.equipment_id)?.daily_price ??
+            0,
+          quantity: bi.quantity,
+        })),
+        durationDays: source.duration_days,
+        discountAmount: source.discount_amount,
+        extraFeesAmount: source.extra_fees_amount,
+      });
       return this.bookings.create(
         {
           customerId: source.customer_id,
@@ -774,9 +790,9 @@ export class MockDataProvider implements DataProvider {
           status: "draft",
         },
         {
-          lineTotals: items.map((bi) => bi.line_total),
-          subtotal: source.subtotal,
-          total: source.total_amount,
+          lineTotals: totals.lineTotals,
+          subtotal: totals.subtotal,
+          total: totals.total,
         }
       );
     },

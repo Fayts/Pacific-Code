@@ -17,11 +17,11 @@ export default function CustomersLoading() {
         <Skeleton className="h-5 w-32" />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-100 bg-neutral-50/60 px-4 py-3">
+      <div className="overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+        <div className="border-b border-border/60 bg-muted/50 px-4 py-3">
           <Skeleton className="h-4 w-48" />
         </div>
-        <div className="divide-y divide-neutral-100">
+        <div className="divide-y divide-border/60">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3.5">
               <Skeleton className="h-4 w-40" />

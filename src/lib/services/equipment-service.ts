@@ -17,6 +17,7 @@ import {
   zodError,
   type ActionResult,
 } from "@/server/action-result";
+import { isBlockingStatus } from "@/lib/core/booking-status";
 import type { EquipmentStatus } from "@/lib/types/database";
 
 /** Statuts modifiables manuellement (réservé/loué sont dérivés, archivé à part). */
@@ -53,6 +54,46 @@ export async function createEquipment(
   return actionOk({ equipmentId: item.id });
 }
 
+/**
+ * Nombre d'exemplaires qu'il est impossible de retirer du parc : pic de
+ * réservations bloquantes à venir + exemplaires actuellement sortis
+ * (y compris en retard). Balayage d'événements sur [now, ∞), fin exclusive.
+ */
+async function reservedFloor(
+  equipmentId: string,
+  provider: DataProvider
+): Promise<number> {
+  const nowIso = new Date().toISOString();
+  const bookings = await provider.bookings.list();
+
+  let out = 0;
+  const events: { at: string; delta: number }[] = [];
+  for (const booking of bookings) {
+    if (!isBlockingStatus(booking.status)) continue;
+    for (const item of booking.items) {
+      if (item.equipment_id !== equipmentId) continue;
+      if (booking.status === "in_progress") out += item.quantity;
+      if (booking.end_at > nowIso) {
+        events.push({
+          at: booking.start_at > nowIso ? booking.start_at : nowIso,
+          delta: item.quantity,
+        });
+        events.push({ at: booking.end_at, delta: -item.quantity });
+      }
+    }
+  }
+  events.sort((a, b) =>
+    a.at === b.at ? a.delta - b.delta : a.at.localeCompare(b.at)
+  );
+  let running = 0;
+  let peak = 0;
+  for (const event of events) {
+    running += event.delta;
+    if (running > peak) peak = running;
+  }
+  return Math.max(peak, out);
+}
+
 export async function updateEquipment(
   id: string,
   input: EquipmentInput,
@@ -60,6 +101,17 @@ export async function updateEquipment(
 ): Promise<ActionResult<{ equipmentId: string }>> {
   const parsed = equipmentSchema.safeParse(input);
   if (!parsed.success) return zodError(parsed.error);
+
+  // Réduire le parc sous les quantités déjà réservées ou sorties créerait
+  // une sur-réservation silencieuse : on bloque avec un message explicite.
+  const floor = await reservedFloor(id, provider);
+  if (parsed.data.quantityTotal < floor) {
+    return actionError(
+      `Impossible de réduire la quantité à ${parsed.data.quantityTotal} : ` +
+        `${floor} exemplaire${floor > 1 ? "s sont" : " est"} déjà réservé(s) ` +
+        "ou en location. Annulez d'abord les réservations concernées."
+    );
+  }
 
   const item = await provider.equipment.update(id, toDraft(parsed.data));
   if (!item) return actionError("Matériel introuvable");

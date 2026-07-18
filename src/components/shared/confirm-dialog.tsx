@@ -35,7 +35,10 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<span className="contents" />}>
+      <AlertDialogTrigger
+        nativeButton={false}
+        render={<span className="contents" />}
+      >
         {trigger}
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -51,7 +54,7 @@ export function ConfirmDialog({
             disabled={pending}
             className={
               destructive
-                ? "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-destructive text-white hover:bg-destructive/90"
                 : undefined
             }
             onClick={(event) => {

@@ -13,8 +13,8 @@ export default function EquipmentLoading() {
 
       <Skeleton className="mb-4 h-14 w-full rounded-lg" />
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <div className="divide-y divide-neutral-100">
+      <div className="overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+        <div className="divide-y divide-border/60">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex items-center gap-3 p-3">
               <Skeleton className="size-11 rounded-md" />

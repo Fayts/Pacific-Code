@@ -24,13 +24,18 @@ function StatCard({
   return (
     <Card
       size="sm"
-      className={cn(danger && "bg-red-50 ring-red-200")}
+      className={cn(
+        "transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-pc-deep/[0.07]",
+        danger && "bg-red-50 ring-red-200"
+      )}
     >
       <CardContent className="flex items-center gap-3">
         <span
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-lg",
-            danger ? "bg-red-100 text-red-700" : "bg-sky-50 text-sky-700"
+            "flex size-9 shrink-0 items-center justify-center rounded-lg text-white shadow-lg",
+            danger
+              ? "bg-gradient-to-br from-pc-coral to-red-500 shadow-red-500/25"
+              : "bg-gradient-to-br from-pc-lagoon to-pc-turquoise shadow-pc-turquoise/25"
           )}
         >
           <Icon className="size-4" aria-hidden />
@@ -38,8 +43,8 @@ function StatCard({
         <div className="min-w-0">
           <p
             className={cn(
-              "truncate text-lg font-semibold leading-tight",
-              danger ? "text-red-800" : "text-neutral-900"
+              "truncate text-lg font-semibold leading-tight tabular-nums",
+              danger ? "text-red-700" : "text-foreground"
             )}
             title={value}
           >
@@ -48,7 +53,7 @@ function StatCard({
           <p
             className={cn(
               "truncate text-xs",
-              danger ? "text-red-700" : "text-neutral-500"
+              danger ? "text-red-700/80" : "text-muted-foreground"
             )}
           >
             {label}

@@ -65,10 +65,10 @@ export function EquipmentToolbar({
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-3 lg:flex-row lg:items-center">
+    <div className="mb-4 flex flex-col gap-3 rounded-xl bg-card p-3 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] lg:flex-row lg:items-center">
       <form method="get" action="/equipment" className="relative min-w-0 flex-1">
         <Search
-          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-neutral-400"
+          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground/70"
           aria-hidden
         />
         <Input
@@ -125,7 +125,7 @@ export function EquipmentToolbar({
 
         <Link
           href={buildQuery({ archived: !archived, status: "" })}
-          className="text-sm whitespace-nowrap text-sky-700 hover:underline"
+          className="text-sm whitespace-nowrap text-primary hover:underline"
         >
           {archived ? "Afficher le parc actif" : "Afficher les archivés"}
         </Link>

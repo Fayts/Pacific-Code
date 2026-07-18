@@ -55,7 +55,7 @@ export function CustomerActions({
       trigger={
         <Button
           variant="outline"
-          className="text-red-700 hover:bg-red-50 hover:text-red-800"
+          className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
         >
           <Archive aria-hidden />
           Archiver

@@ -21,7 +21,7 @@ const LEGEND_ORDER: DerivedBookingStatus[] = [
 
 export function CalendarLegend({ hasConflicts }: { hasConflicts: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-600">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
       {LEGEND_ORDER.map((status) => (
         <span key={status} className="flex items-center gap-1.5">
           <span
@@ -35,7 +35,7 @@ export function CalendarLegend({ hasConflicts }: { hasConflicts: boolean }) {
         </span>
       ))}
       {hasConflicts && (
-        <span className="flex items-center gap-1.5 font-medium text-red-600">
+        <span className="flex items-center gap-1.5 font-medium text-destructive">
           <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
           Conflit possible (quantités demandées supérieures au stock)
         </span>

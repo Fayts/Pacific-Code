@@ -169,10 +169,10 @@ export function CustomersListClient() {
       ) : (
         <>
           {/* Tableau (desktop) */}
-          <div className="hidden overflow-hidden rounded-xl border border-neutral-200 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] md:block">
             <Table>
               <TableHeader>
-                <TableRow className="bg-neutral-50/60">
+                <TableRow className="bg-muted/50">
                   <TableHead className="pl-4">Client</TableHead>
                   <TableHead>Téléphone</TableHead>
                   <TableHead>Email</TableHead>
@@ -190,7 +190,7 @@ export function CustomersListClient() {
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/customers/${customer.id}`}
-                            className="font-medium text-neutral-900 hover:text-sky-700 hover:underline"
+                            className="font-medium text-foreground hover:text-primary hover:underline"
                           >
                             {name}
                           </Link>
@@ -199,16 +199,16 @@ export function CustomersListClient() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-neutral-600">
+                      <TableCell className="text-muted-foreground">
                         {customer.phone || "—"}
                       </TableCell>
-                      <TableCell className="text-neutral-600">
+                      <TableCell className="text-muted-foreground">
                         {customer.email || "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {bookingCount}
                       </TableCell>
-                      <TableCell className="text-neutral-600">
+                      <TableCell className="text-muted-foreground">
                         {lastBookingAt
                           ? formatDate(lastBookingAt, timezone)
                           : "—"}
@@ -219,7 +219,7 @@ export function CustomersListClient() {
                       <TableCell className="pr-3 text-right">
                         <Link
                           href={`/customers/${customer.id}`}
-                          className="text-sm font-medium text-sky-700 hover:underline"
+                          className="text-sm font-medium text-primary hover:underline"
                           aria-label={`Voir la fiche de ${name}`}
                         >
                           Voir
@@ -239,31 +239,31 @@ export function CustomersListClient() {
                 <Link
                   key={customer.id}
                   href={`/customers/${customer.id}`}
-                  className="block rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300"
+                  className="block rounded-xl bg-card p-4 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-pc-deep/[0.06]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate font-medium text-neutral-900">
+                        <p className="truncate font-medium text-foreground">
                           {name}
                         </p>
                         {customer.type === "company" && (
                           <CustomerTypeBadge type="company" />
                         )}
                       </div>
-                      <p className="mt-0.5 truncate text-sm text-neutral-500">
+                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
                         {[customer.phone, customer.email]
                           .filter(Boolean)
                           .join(" · ") || "Aucune coordonnée"}
                       </p>
                     </div>
                     <ChevronRight
-                      className="mt-0.5 size-4 shrink-0 text-neutral-400"
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground/70"
                       aria-hidden
                     />
                   </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 text-sm">
-                    <span className="text-neutral-500">
+                  <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm">
+                    <span className="text-muted-foreground">
                       {bookingCount} réservation{bookingCount > 1 ? "s" : ""}
                       {lastBookingAt
                         ? ` · dernière le ${formatDate(lastBookingAt, timezone)}`

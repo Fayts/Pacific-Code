@@ -25,7 +25,7 @@ type BadgeStyle = { label: string; className: string };
 export const BOOKING_STATUS: Record<DerivedBookingStatus, BadgeStyle> = {
   draft: {
     label: "Brouillon",
-    className: "bg-neutral-100 text-neutral-700 border-neutral-200",
+    className: "bg-muted text-muted-foreground border-border",
   },
   pending: {
     label: "À confirmer",
@@ -33,7 +33,7 @@ export const BOOKING_STATUS: Record<DerivedBookingStatus, BadgeStyle> = {
   },
   confirmed: {
     label: "Confirmée",
-    className: "bg-blue-50 text-blue-800 border-blue-200",
+    className: "bg-cyan-50 text-cyan-800 border-cyan-200",
   },
   in_progress: {
     label: "En cours",
@@ -41,22 +41,22 @@ export const BOOKING_STATUS: Record<DerivedBookingStatus, BadgeStyle> = {
   },
   completed: {
     label: "Terminée",
-    className: "bg-neutral-100 text-neutral-600 border-neutral-200",
+    className: "bg-muted text-muted-foreground border-border",
   },
   cancelled: {
     label: "Annulée",
-    className: "bg-neutral-100 text-neutral-500 border-neutral-200 line-through",
+    className: "bg-muted text-muted-foreground/70 border-border line-through",
   },
   late: {
     label: "En retard",
-    className: "bg-red-50 text-red-800 border-red-200",
+    className: "bg-red-50 text-red-700 border-red-200",
   },
 };
 
 export const PAYMENT_STATUS: Record<PaymentStatus, BadgeStyle> = {
   unpaid: {
     label: "Non payé",
-    className: "bg-red-50 text-red-800 border-red-200",
+    className: "bg-red-50 text-red-700 border-red-200",
   },
   deposit_paid: {
     label: "Acompte payé",
@@ -68,14 +68,14 @@ export const PAYMENT_STATUS: Record<PaymentStatus, BadgeStyle> = {
   },
   refunded: {
     label: "Remboursé",
-    className: "bg-neutral-100 text-neutral-600 border-neutral-200",
+    className: "bg-muted text-muted-foreground border-border",
   },
 };
 
 export const DEPOSIT_STATUS: Record<DepositStatus, BadgeStyle> = {
   not_required: {
     label: "Non demandée",
-    className: "bg-neutral-100 text-neutral-600 border-neutral-200",
+    className: "bg-muted text-muted-foreground border-border",
   },
   pending: {
     label: "En attente",
@@ -87,7 +87,7 @@ export const DEPOSIT_STATUS: Record<DepositStatus, BadgeStyle> = {
   },
   returned: {
     label: "Restituée",
-    className: "bg-blue-50 text-blue-800 border-blue-200",
+    className: "bg-cyan-50 text-cyan-800 border-cyan-200",
   },
   partially_withheld: {
     label: "Retenue partielle",
@@ -95,7 +95,7 @@ export const DEPOSIT_STATUS: Record<DepositStatus, BadgeStyle> = {
   },
   withheld: {
     label: "Retenue totale",
-    className: "bg-red-50 text-red-800 border-red-200",
+    className: "bg-red-50 text-red-700 border-red-200",
   },
 };
 
@@ -106,11 +106,11 @@ export const EQUIPMENT_STATUS: Record<EquipmentDisplayStatus, BadgeStyle> = {
   },
   reserved: {
     label: "Réservé",
-    className: "bg-blue-50 text-blue-800 border-blue-200",
+    className: "bg-cyan-50 text-cyan-800 border-cyan-200",
   },
   rented: {
     label: "En location",
-    className: "bg-violet-50 text-violet-800 border-violet-200",
+    className: "bg-orange-50 text-orange-800 border-orange-200",
   },
   maintenance: {
     label: "En maintenance",
@@ -118,11 +118,11 @@ export const EQUIPMENT_STATUS: Record<EquipmentDisplayStatus, BadgeStyle> = {
   },
   unavailable: {
     label: "Indisponible",
-    className: "bg-neutral-100 text-neutral-600 border-neutral-200",
+    className: "bg-rose-50 text-rose-700 border-rose-200",
   },
   archived: {
     label: "Archivé",
-    className: "bg-neutral-100 text-neutral-500 border-neutral-200",
+    className: "bg-muted text-muted-foreground/70 border-border",
   },
 };
 
@@ -141,12 +141,12 @@ export const CUSTOMER_TYPE_LABELS: Record<CustomerType, string> = {
 
 // Couleurs des réservations dans le calendrier (pastilles + fonds doux).
 export const CALENDAR_STATUS_COLORS: Record<DerivedBookingStatus, string> = {
-  draft: "bg-neutral-200 text-neutral-800",
+  draft: "bg-slate-200 text-slate-700",
   pending: "bg-amber-200 text-amber-900",
-  confirmed: "bg-blue-200 text-blue-900",
+  confirmed: "bg-cyan-200 text-cyan-900",
   in_progress: "bg-emerald-200 text-emerald-900",
-  completed: "bg-neutral-100 text-neutral-500",
-  cancelled: "bg-neutral-100 text-neutral-400 line-through",
+  completed: "bg-slate-100 text-slate-500",
+  cancelled: "bg-slate-100 text-slate-400 line-through",
   late: "bg-red-200 text-red-900",
 };
 

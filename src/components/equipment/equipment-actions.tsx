@@ -133,7 +133,7 @@ export function EquipmentActions({
               <Button
                 type="button"
                 variant="outline"
-                className="text-red-600 hover:text-red-700"
+                className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
               >
                 <Archive aria-hidden />
                 Archiver

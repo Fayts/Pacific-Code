@@ -58,15 +58,18 @@ function LoginForm() {
   };
 
   return (
-    <Card>
+    <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-900/10 backdrop-blur-md">
       <CardHeader>
-        <CardTitle className="text-lg">Connexion</CardTitle>
+        <CardTitle className="text-xl">
+          Ia ora na&nbsp;!{" "}
+          <span aria-hidden className="align-middle text-base">🌺</span>
+        </CardTitle>
         <CardDescription>
-          Accédez à votre espace de gestion de location
+          Heureux de vous revoir — accédez à votre espace de gestion
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+        <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
           <strong>Version de démonstration</strong> — entrez n&apos;importe
           quel email et mot de passe : aucune donnée réelle n&apos;est
           utilisée.
@@ -109,7 +112,11 @@ function LoginForm() {
               <p className="text-sm text-red-600">{errors.password.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button
+            type="submit"
+            className="h-10 w-full border-0 bg-gradient-to-r from-sky-600 via-cyan-500 to-teal-500 text-sm font-semibold text-white shadow-lg shadow-cyan-600/25 hover:brightness-105"
+            disabled={pending}
+          >
             {pending ? "Connexion…" : "Se connecter"}
           </Button>
         </form>

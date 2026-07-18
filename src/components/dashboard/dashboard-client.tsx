@@ -93,7 +93,8 @@ export function DashboardClient() {
 
   const completedToday = bookings.filter((b) => {
     if (b.status !== "completed") return false;
-    const end = new Date(b.end_at);
+    // Date effective du retour (completed_at) ; end_at n'est qu'un prévisionnel.
+    const end = new Date(b.completed_at ?? b.end_at);
     return end >= day.start && end < day.end;
   }).length;
 
@@ -196,7 +197,11 @@ export function DashboardClient() {
       } else {
         upcomingOps.push(toOperation(booking, "return", end));
       }
-    } else if (start >= now && start < horizon) {
+    } else if (start < now) {
+      // Départ prévu déjà dépassé (matériel pas encore parti) : opération
+      // la plus urgente de l'écran, elle ne doit surtout pas disparaître.
+      lateOps.push(toOperation(booking, "late_departure", start));
+    } else if (start < horizon) {
       upcomingOps.push(toOperation(booking, "departure", start));
     } else if (booking.status === "pending") {
       upcomingOps.push(toOperation(booking, "to_confirm", start));

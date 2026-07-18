@@ -84,7 +84,7 @@ export function BookingsFilters({
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative flex-1 sm:max-w-xs">
         <Search
-          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-neutral-400"
+          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground/70"
           aria-hidden
         />
         <Input
@@ -98,6 +98,7 @@ export function BookingsFilters({
         />
       </div>
       <Select
+        items={STATUS_OPTIONS}
         value={status || "all"}
         onValueChange={(v) => apply({ status: v as string })}
       >
@@ -113,6 +114,7 @@ export function BookingsFilters({
         </SelectContent>
       </Select>
       <Select
+        items={PERIOD_OPTIONS}
         value={period || "all"}
         onValueChange={(v) => apply({ period: v as string })}
       >

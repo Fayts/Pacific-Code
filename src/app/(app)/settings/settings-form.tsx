@@ -64,7 +64,7 @@ function isFieldName(
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="text-sm text-red-600">{message}</p>;
+  return <p className="text-sm text-destructive">{message}</p>;
 }
 
 export function SettingsForm({
@@ -330,9 +330,9 @@ export function SettingsForm({
             {...register("bookingPrefix")}
           />
           <FieldError message={errors.bookingPrefix?.message} />
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             Exemple :{" "}
-            <span className="font-medium text-neutral-700">
+            <span className="font-medium text-foreground">
               {prefixValue ? `${prefixValue}-${currentYear}-0001` : "—"}
             </span>
           </p>

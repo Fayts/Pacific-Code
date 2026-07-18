@@ -9,8 +9,8 @@ export function CustomerTypeBadge({ type }: { type: CustomerType }) {
       className={cn(
         "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
         type === "company"
-          ? "border-sky-200 bg-sky-50 text-sky-800"
-          : "border-neutral-200 bg-neutral-100 text-neutral-700"
+          ? "border-cyan-200 bg-cyan-50 text-cyan-800"
+          : "border-border bg-muted text-muted-foreground"
       )}
     >
       {CUSTOMER_TYPE_LABELS[type]}

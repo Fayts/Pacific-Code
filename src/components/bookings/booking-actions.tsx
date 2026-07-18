@@ -141,7 +141,7 @@ export function BookingActions({
           }
           confirmLabel="Annuler la réservation"
           destructive
-          onConfirm={() => applyStatus("cancelled")}
+          onConfirm={() => startTransition(() => applyStatus("cancelled"))}
         />
       )}
     </div>

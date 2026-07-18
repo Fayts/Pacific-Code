@@ -23,10 +23,10 @@ export function QuickActions() {
             <Button
               key={action.href}
               variant="outline"
-              className="h-auto flex-col gap-2 py-3 whitespace-normal"
+              className="h-auto flex-col gap-2 py-3 whitespace-normal transition duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-pc-deep/[0.06]"
               render={<Link href={action.href} />}
             >
-              <action.icon className="size-4 text-sky-700" aria-hidden />
+              <action.icon className="size-4 text-primary" aria-hidden />
               <span className="text-center text-xs leading-snug font-medium">
                 {action.label}
               </span>

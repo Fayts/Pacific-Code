@@ -1,0 +1,21 @@
+# Déploiement sur le VPS : le conteneur rejoint le réseau du projet
+# Claude-IA pour être joignable par Caddy sous le nom « pacific-code ».
+services:
+  pacific-code:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_DATA_MODE: mock
+        NEXT_PUBLIC_SITE_URL: https://pacific-code.duckdns.org
+    image: pacific-code
+    container_name: pacific-code
+    environment:
+      # Assistant IA en mode démonstration : aucune clé API requise.
+      AI_PROVIDER: demo
+    restart: unless-stopped
+    networks:
+      - claude-ia_default
+
+networks:
+  claude-ia_default:
+    external: true

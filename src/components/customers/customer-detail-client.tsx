@@ -47,10 +47,10 @@ function InfoRow({
 }) {
   return (
     <div>
-      <dt className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+      <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-neutral-900">{children}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">{children}</dd>
     </div>
   );
 }
@@ -154,12 +154,12 @@ export function CustomerDetailClient({ id }: { id: string }) {
             </h1>
             <CustomerTypeBadge type={customer.type} />
             {archived && (
-              <span className="inline-flex items-center rounded-md border border-neutral-200 bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">
+              <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground/70">
                 Archivé
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Client depuis le {formatDate(customer.created_at, timezone)}
           </p>
         </div>
@@ -199,9 +199,9 @@ export function CustomerDetailClient({ id }: { id: string }) {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3"
+            className="rounded-xl bg-card px-4 py-3 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]"
           >
-            <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {stat.label}
             </p>
             <p className="mt-1 text-xl font-semibold tabular-nums">
@@ -214,7 +214,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Historique des réservations */}
         <div className="lg:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
             Historique des réservations
           </h2>
 
@@ -239,10 +239,10 @@ export function CustomerDetailClient({ id }: { id: string }) {
           ) : (
             <>
               {/* Tableau (desktop) */}
-              <div className="hidden overflow-hidden rounded-xl border border-neutral-200 bg-white md:block">
+              <div className="hidden overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] md:block">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-neutral-50/60">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="pl-4">Numéro</TableHead>
                       <TableHead>Matériels</TableHead>
                       <TableHead>Période</TableHead>
@@ -256,18 +256,18 @@ export function CustomerDetailClient({ id }: { id: string }) {
                         <TableCell className="pl-4">
                           <Link
                             href={`/bookings/${booking.id}`}
-                            className="font-medium text-sky-700 hover:underline"
+                            className="font-medium text-primary hover:underline"
                           >
                             {booking.booking_number}
                           </Link>
                         </TableCell>
                         <TableCell
-                          className="max-w-56 truncate text-neutral-600"
+                          className="max-w-56 truncate text-muted-foreground"
                           title={booking.materials}
                         >
                           {booking.materials}
                         </TableCell>
-                        <TableCell className="text-neutral-600">
+                        <TableCell className="text-muted-foreground">
                           {formatDate(booking.start_at, timezone)} →{" "}
                           {formatDate(booking.end_at, timezone)}
                         </TableCell>
@@ -289,19 +289,19 @@ export function CustomerDetailClient({ id }: { id: string }) {
                   <Link
                     key={booking.id}
                     href={`/bookings/${booking.id}`}
-                    className="block rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300"
+                    className="block rounded-xl bg-card p-4 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-pc-deep/[0.06]"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sky-700">
+                      <span className="font-medium text-primary">
                         {booking.booking_number}
                       </span>
                       <BookingStatusBadge status={booking.displayStatus} />
                     </div>
-                    <p className="mt-1 truncate text-sm text-neutral-600">
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
                       {booking.materials}
                     </p>
                     <div className="mt-2 flex items-center justify-between text-sm">
-                      <span className="text-neutral-500">
+                      <span className="text-muted-foreground">
                         {formatDate(booking.start_at, timezone)} →{" "}
                         {formatDate(booking.end_at, timezone)}
                       </span>
@@ -340,24 +340,24 @@ export function CustomerDetailClient({ id }: { id: string }) {
                   {customer.email ? (
                     <a
                       href={`mailto:${customer.email}`}
-                      className="text-sky-700 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {customer.email}
                     </a>
                   ) : (
-                    <span className="text-neutral-400">Non renseigné</span>
+                    <span className="text-muted-foreground/70">Non renseigné</span>
                   )}
                 </InfoRow>
                 <InfoRow label="Téléphone">
                   {customer.phone ? (
                     <a
                       href={`tel:${customer.phone}`}
-                      className="text-sky-700 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {customer.phone}
                     </a>
                   ) : (
-                    <span className="text-neutral-400">Non renseigné</span>
+                    <span className="text-muted-foreground/70">Non renseigné</span>
                   )}
                 </InfoRow>
                 <InfoRow label="Adresse">
@@ -366,7 +366,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
                       {customer.address}
                     </span>
                   ) : (
-                    <span className="text-neutral-400">Non renseignée</span>
+                    <span className="text-muted-foreground/70">Non renseignée</span>
                   )}
                 </InfoRow>
                 {customer.id_number && (
@@ -384,7 +384,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
                 <CardTitle>Notes internes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm whitespace-pre-line text-neutral-700">
+                <p className="text-sm whitespace-pre-line text-foreground">
                   {customer.internal_notes}
                 </p>
               </CardContent>

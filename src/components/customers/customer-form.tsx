@@ -131,6 +131,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
               name="type"
               render={({ field }) => (
                 <Select
+                  items={CUSTOMER_TYPE_LABELS}
                   value={field.value}
                   onValueChange={(v) => field.onChange(v as CustomerType)}
                 >
@@ -159,7 +160,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
                 {...register("companyName")}
               />
               {errors.companyName && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.companyName.message}
                 </p>
               )}
@@ -171,14 +172,14 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
               <Label htmlFor="firstName">Prénom</Label>
               <Input id="firstName" placeholder="Jean" {...register("firstName")} />
               {errors.firstName && (
-                <p className="text-sm text-red-600">{errors.firstName.message}</p>
+                <p className="text-sm text-destructive">{errors.firstName.message}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Nom</Label>
               <Input id="lastName" placeholder="Dupont" {...register("lastName")} />
               {errors.lastName && (
-                <p className="text-sm text-red-600">{errors.lastName.message}</p>
+                <p className="text-sm text-destructive">{errors.lastName.message}</p>
               )}
             </div>
           </div>
@@ -193,7 +194,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-red-600">{errors.email.message}</p>
+                <p className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -205,7 +206,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
                 {...register("phone")}
               />
               {errors.phone && (
-                <p className="text-sm text-red-600">{errors.phone.message}</p>
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
               )}
             </div>
           </div>
@@ -219,14 +220,14 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
               {...register("address")}
             />
             {errors.address && (
-              <p className="text-sm text-red-600">{errors.address.message}</p>
+              <p className="text-sm text-destructive">{errors.address.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="idNumber">
               N° d&apos;identification{" "}
-              <span className="font-normal text-neutral-400">(facultatif)</span>
+              <span className="font-normal text-muted-foreground/70">(facultatif)</span>
             </Label>
             <Input
               id="idNumber"
@@ -234,7 +235,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
               {...register("idNumber")}
             />
             {errors.idNumber && (
-              <p className="text-sm text-red-600">{errors.idNumber.message}</p>
+              <p className="text-sm text-destructive">{errors.idNumber.message}</p>
             )}
           </div>
 
@@ -247,7 +248,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
               {...register("internalNotes")}
             />
             {errors.internalNotes && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.internalNotes.message}
               </p>
             )}

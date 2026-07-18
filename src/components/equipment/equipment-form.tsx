@@ -152,7 +152,7 @@ export function EquipmentForm({
               {...register("name")}
             />
             {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
+              <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
 
@@ -206,7 +206,7 @@ export function EquipmentForm({
                 {...register("internalRef")}
               />
               {errors.internalRef && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.internalRef.message}
                 </p>
               )}
@@ -222,7 +222,7 @@ export function EquipmentForm({
               {...register("description")}
             />
             {errors.description && (
-              <p className="text-sm text-red-600">{errors.description.message}</p>
+              <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
           </div>
         </CardContent>
@@ -244,7 +244,7 @@ export function EquipmentForm({
               {...register("dailyPrice")}
             />
             {errors.dailyPrice && (
-              <p className="text-sm text-red-600">{errors.dailyPrice.message}</p>
+              <p className="text-sm text-destructive">{errors.dailyPrice.message}</p>
             )}
           </div>
 
@@ -259,7 +259,7 @@ export function EquipmentForm({
               {...register("depositAmount")}
             />
             {errors.depositAmount && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.depositAmount.message}
               </p>
             )}
@@ -276,7 +276,7 @@ export function EquipmentForm({
               {...register("quantityTotal")}
             />
             {errors.quantityTotal && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.quantityTotal.message}
               </p>
             )}
@@ -293,7 +293,7 @@ export function EquipmentForm({
               {...register("minRentalDays")}
             />
             {errors.minRentalDays && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.minRentalDays.message}
               </p>
             )}
@@ -345,7 +345,7 @@ export function EquipmentForm({
               {...register("usageInstructions")}
             />
             {errors.usageInstructions && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.usageInstructions.message}
               </p>
             )}
@@ -360,7 +360,7 @@ export function EquipmentForm({
               {...register("internalNotes")}
             />
             {errors.internalNotes && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.internalNotes.message}
               </p>
             )}
@@ -368,7 +368,7 @@ export function EquipmentForm({
         </CardContent>
       </Card>
 
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted-foreground">
         Version de démonstration : l&apos;ajout de photos sera disponible une
         fois le stockage en ligne connecté.
       </p>

@@ -59,7 +59,7 @@ export function CustomerCombobox({
             !selected && "text-muted-foreground"
           )}
         >
-          <User className="size-4 shrink-0 text-neutral-400" aria-hidden />
+          <User className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
           <span className="truncate">
             {selected ? formatCustomerName(selected) : "Sélectionner un client"}
           </span>

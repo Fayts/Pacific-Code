@@ -80,7 +80,7 @@ function parseAmount(value: string): number {
 function StepTitle({ step, children }: { step: number; children: ReactNode }) {
   return (
     <CardTitle className="flex items-center gap-2">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sky-700 text-[11px] font-semibold text-white">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
         {step}
       </span>
       {children}
@@ -419,7 +419,7 @@ export function BookingForm({
             </div>
             {selectedCustomer &&
               (selectedCustomer.phone || selectedCustomer.email) && (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-muted-foreground">
                   {[selectedCustomer.phone, selectedCustomer.email]
                     .filter(Boolean)
                     .join(" · ")}
@@ -440,13 +440,13 @@ export function BookingForm({
           </CardHeader>
           <CardContent className="space-y-3">
             {equipment.length === 0 ? (
-              <div className="flex items-center gap-3 rounded-lg border border-dashed border-neutral-300 px-4 py-6 text-sm text-neutral-500">
+              <div className="flex items-center gap-3 rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
                 <PackageSearch className="size-5 shrink-0" aria-hidden />
                 <p>
                   Aucun matériel actif.{" "}
                   <Link
                     href="/equipment"
-                    className="text-sky-700 hover:underline"
+                    className="text-primary hover:text-primary/80 hover:underline"
                   >
                     Ajoutez d&apos;abord du matériel
                   </Link>
@@ -465,7 +465,7 @@ export function BookingForm({
                 )}
                 <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
                   {visibleEquipment.length === 0 && (
-                    <p className="py-4 text-center text-sm text-neutral-500">
+                    <p className="py-4 text-center text-sm text-muted-foreground">
                       Aucun matériel ne correspond à «&nbsp;{equipmentQuery}
                       &nbsp;».
                     </p>
@@ -481,8 +481,8 @@ export function BookingForm({
                         tabIndex={-1}
                         onClick={() => toggleEquipment(eq.id)}
                         className={cn(
-                          "flex cursor-pointer items-start gap-3 rounded-lg border border-neutral-200 p-3 transition-colors hover:bg-neutral-50",
-                          selection && "border-sky-300 bg-sky-50/50"
+                          "flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50",
+                          selection && "border-primary/30 bg-primary/[0.06]"
                         )}
                       >
                         <Checkbox
@@ -494,12 +494,12 @@ export function BookingForm({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-sm font-medium">{eq.name}</p>
-                            <p className="text-sm whitespace-nowrap text-neutral-600">
+                            <p className="text-sm whitespace-nowrap text-muted-foreground">
                               {formatMoney(eq.daily_price, currency)}
-                              <span className="text-neutral-400"> / jour</span>
+                              <span className="text-muted-foreground/70"> / jour</span>
                             </p>
                           </div>
-                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500">
+                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                             <span>
                               Caution {formatMoney(eq.deposit_amount, currency)}
                             </span>
@@ -518,7 +518,7 @@ export function BookingForm({
                             >
                               <Label
                                 htmlFor={`qty-${eq.id}`}
-                                className="text-xs text-neutral-600"
+                                className="text-xs text-muted-foreground"
                               >
                                 Quantité
                               </Label>
@@ -537,7 +537,7 @@ export function BookingForm({
                                 }
                                 className="h-7 w-20"
                               />
-                              <span className="text-xs text-neutral-400">
+                              <span className="text-xs text-muted-foreground/70">
                                 / {eq.quantity_total} max
                               </span>
                             </div>
@@ -582,18 +582,18 @@ export function BookingForm({
               </div>
             </div>
             {period.valid ? (
-              <p className="flex items-center gap-2 text-sm text-neutral-600">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarClock
-                  className="size-4 text-neutral-400"
+                  className="size-4 text-muted-foreground/70"
                   aria-hidden
                 />
                 Durée facturable :{" "}
-                <span className="font-medium text-neutral-900">
+                <span className="font-medium text-foreground">
                   {period.days} jour{period.days > 1 ? "s" : ""}
                 </span>
               </p>
             ) : (
-              <p className="flex items-center gap-2 text-sm text-red-600">
+              <p className="flex items-center gap-2 text-sm text-destructive">
                 <AlertTriangle className="size-4" aria-hidden />
                 {period.error}
               </p>
@@ -619,24 +619,24 @@ export function BookingForm({
           </CardHeader>
           <CardContent className="space-y-2">
             {items.length === 0 ? (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted-foreground">
                 Sélectionnez au moins un matériel pour vérifier la
                 disponibilité.
               </p>
             ) : !period.valid ? (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted-foreground">
                 Renseignez une période valide pour vérifier la disponibilité.
               </p>
             ) : (
               <>
                 {checking && (
-                  <p className="flex items-center gap-2 text-sm text-neutral-500">
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" aria-hidden />
                     Vérification de la disponibilité…
                   </p>
                 )}
                 {availabilityError && (
-                  <p className="text-sm text-red-600">{availabilityError}</p>
+                  <p className="text-sm text-destructive">{availabilityError}</p>
                 )}
                 {availability?.items.map((item) =>
                   item.available ? (
@@ -659,7 +659,7 @@ export function BookingForm({
                   ) : (
                     <div
                       key={item.equipmentId}
-                      className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                      className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
                     >
                       <XCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
                       <div className="min-w-0">
@@ -736,9 +736,9 @@ export function BookingForm({
                     key={s.option.id}
                     className="flex items-baseline justify-between gap-2"
                   >
-                    <span className="min-w-0 truncate text-neutral-600">
+                    <span className="min-w-0 truncate text-muted-foreground">
                       {s.option.name}{" "}
-                      <span className="text-neutral-400">
+                      <span className="text-muted-foreground/70">
                         × {s.draft.quantity} × {durationDays} j
                       </span>
                     </span>
@@ -749,13 +749,13 @@ export function BookingForm({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted-foreground">
                 Sélectionnez du matériel et une période pour calculer le prix.
               </p>
             )}
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">Sous-total</span>
+              <span className="text-muted-foreground">Sous-total</span>
               <span className="font-medium tabular-nums">
                 {formatMoney(totals?.subtotal ?? 0, currency)}
               </span>
@@ -791,7 +791,7 @@ export function BookingForm({
             <Separator />
 
             <div className="flex items-end justify-between">
-              <span className="text-sm font-medium text-neutral-500">
+              <span className="text-sm font-medium text-muted-foreground">
                 Total
               </span>
               <span className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -812,14 +812,14 @@ export function BookingForm({
                 value={deposit}
                 onChange={(e) => setDepositOverride(e.target.value)}
               />
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-muted-foreground">
                 Suggestion (cautions du matériel) :{" "}
                 {formatMoney(suggestedDeposit, currency)}
                 {depositOverride !== null &&
                   parseAmount(deposit) !== suggestedDeposit && (
                     <button
                       type="button"
-                      className="ml-1.5 font-medium text-sky-700 hover:underline"
+                      className="ml-1.5 font-medium text-primary hover:text-primary/80 hover:underline"
                       onClick={() => setDepositOverride(null)}
                     >
                       Appliquer
@@ -863,7 +863,7 @@ export function BookingForm({
                 Enregistrer comme brouillon
               </Button>
               {unavailable && (
-                <p className="text-center text-xs text-red-600">
+                <p className="text-center text-xs text-destructive">
                   Matériel indisponible : seul l&apos;enregistrement en
                   brouillon est possible.
                 </p>
@@ -892,7 +892,7 @@ export function BookingForm({
                 Annuler
               </Button>
               {editStatus !== "draft" && unavailable && (
-                <p className="text-center text-xs text-red-600">
+                <p className="text-center text-xs text-destructive">
                   Impossible d&apos;enregistrer : un matériel n&apos;est plus
                   disponible sur cette période.
                 </p>

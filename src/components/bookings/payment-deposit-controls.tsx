@@ -18,6 +18,18 @@ import {
 import { DEPOSIT_STATUS, PAYMENT_STATUS } from "@/lib/core/labels";
 import type { DepositStatus, PaymentStatus } from "@/lib/types/database";
 
+// `items` permet au Select d'afficher le libellé français de la valeur
+// sélectionnée (sans lui, la valeur brute « unpaid » apparaît).
+const PAYMENT_ITEMS = Object.entries(PAYMENT_STATUS).map(([value, style]) => ({
+  value,
+  label: style.label,
+}));
+
+const DEPOSIT_ITEMS = Object.entries(DEPOSIT_STATUS).map(([value, style]) => ({
+  value,
+  label: style.label,
+}));
+
 // Sélecteurs inline du statut de paiement et de caution d'une réservation.
 export function PaymentDepositControls({
   bookingId,
@@ -65,38 +77,40 @@ export function PaymentDepositControls({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Paiement</Label>
+        <Label htmlFor="payment-status-trigger">Paiement</Label>
         <Select
+          items={PAYMENT_ITEMS}
           value={payment}
           onValueChange={(v) => onPaymentChange(v as PaymentStatus)}
           disabled={paymentPending}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="payment-status-trigger" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(PAYMENT_STATUS).map(([value, style]) => (
-              <SelectItem key={value} value={value}>
-                {style.label}
+            {PAYMENT_ITEMS.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Caution</Label>
+        <Label htmlFor="deposit-status-trigger">Caution</Label>
         <Select
+          items={DEPOSIT_ITEMS}
           value={deposit}
           onValueChange={(v) => onDepositChange(v as DepositStatus)}
           disabled={depositPending}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="deposit-status-trigger" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(DEPOSIT_STATUS).map(([value, style]) => (
-              <SelectItem key={value} value={value}>
-                {style.label}
+            {DEPOSIT_ITEMS.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
               </SelectItem>
             ))}
           </SelectContent>

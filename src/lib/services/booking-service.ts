@@ -251,6 +251,10 @@ export async function setPaymentStatus(
   status: PaymentStatus,
   provider: DataProvider = getDataProvider()
 ): Promise<ActionResult<undefined>> {
+  // Le provider ignore silencieusement un id inconnu : on vérifie d'abord
+  // pour ne pas renvoyer un faux succès à l'UI (optimistic update non annulé).
+  const existing = await provider.bookings.get(bookingId);
+  if (!existing) return actionError("Réservation introuvable");
   await provider.bookings.setPaymentStatus(bookingId, status);
   return actionOk(undefined);
 }
@@ -260,6 +264,8 @@ export async function setDepositStatus(
   status: DepositStatus,
   provider: DataProvider = getDataProvider()
 ): Promise<ActionResult<undefined>> {
+  const existing = await provider.bookings.get(bookingId);
+  if (!existing) return actionError("Réservation introuvable");
   await provider.bookings.setDepositStatus(bookingId, status);
   return actionOk(undefined);
 }

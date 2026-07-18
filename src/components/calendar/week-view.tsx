@@ -38,7 +38,7 @@ function BookingBlock({ entry }: { entry: CalendarEntry }) {
         entry.conflict ? " — Conflit possible" : ""
       }`}
       className={cn(
-        "block min-w-0 rounded-md px-2 py-1.5 text-xs transition-opacity hover:opacity-80",
+        "block min-w-0 rounded-md px-2 py-1.5 text-xs transition hover:brightness-95",
         CALENDAR_STATUS_COLORS[entry.status],
         entry.conflict && "ring-2 ring-red-500"
       )}
@@ -59,25 +59,25 @@ function BookingBlock({ entry }: { entry: CalendarEntry }) {
 
 export function WeekView({ days }: { days: CalendarDay[] }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200">
-      <div className="grid grid-cols-1 gap-px md:grid-cols-7">
+    <div className="overflow-hidden rounded-xl bg-card shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]">
+      <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-7">
         {days.map((day, index) => (
-          <section key={day.key} className="bg-white">
+          <section key={day.key} className="bg-card">
             <header
               className={cn(
-                "flex items-center gap-2 border-b border-neutral-100 px-3 py-2 md:flex-col md:items-center md:gap-0.5",
-                day.isToday && "bg-sky-50"
+                "flex items-center gap-2 border-b border-border px-3 py-2 md:flex-col md:items-center md:gap-0.5",
+                day.isToday && "bg-primary/[0.06]"
               )}
             >
-              <span className="text-xs font-medium text-neutral-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {WEEKDAY_LABELS[index % 7]}
               </span>
               <span
                 className={cn(
                   "inline-flex items-center justify-center rounded-full px-2 py-0.5 text-sm font-semibold",
                   day.isToday
-                    ? "bg-sky-700 text-white"
-                    : "text-neutral-900"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground"
                 )}
               >
                 {dayLabel(day)}
@@ -86,7 +86,7 @@ export function WeekView({ days }: { days: CalendarDay[] }) {
 
             <div className="flex min-h-16 flex-col gap-1.5 p-2 md:min-h-72">
               {day.entries.length === 0 ? (
-                <p className="px-1 py-0.5 text-xs text-neutral-400">
+                <p className="px-1 py-0.5 text-xs text-muted-foreground/70">
                   Aucune réservation
                 </p>
               ) : (

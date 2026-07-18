@@ -98,7 +98,7 @@ export function BookingEditClient({ id }: { id: string }) {
     <div>
       <Link
         href={`/bookings/${booking.id}`}
-        className="mb-3 inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" aria-hidden />
         {booking.booking_number}

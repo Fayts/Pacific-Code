@@ -19,7 +19,12 @@ import { formatDateTime } from "@/lib/core/format";
 import type { DerivedBookingStatus } from "@/lib/core/labels";
 import { cn } from "@/lib/utils";
 
-export type OperationKind = "late" | "departure" | "return" | "to_confirm";
+export type OperationKind =
+  | "late"
+  | "late_departure"
+  | "departure"
+  | "return"
+  | "to_confirm";
 
 export type DashboardOperation = {
   key: string;
@@ -42,10 +47,15 @@ const KIND_CONFIG: Record<
     label: "Retour en retard",
     iconClassName: "bg-red-100 text-red-700",
   },
+  late_departure: {
+    icon: AlertTriangle,
+    label: "Départ dépassé",
+    iconClassName: "bg-amber-100 text-amber-700",
+  },
   departure: {
     icon: ArrowUpRight,
     label: "Départ",
-    iconClassName: "bg-sky-50 text-sky-700",
+    iconClassName: "bg-primary/10 text-primary",
   },
   return: {
     icon: ArrowDownLeft,
@@ -80,16 +90,16 @@ export function UpcomingOperations({
             <span className="flex size-11 items-center justify-center rounded-full bg-emerald-50">
               <CalendarCheck2 className="size-5 text-emerald-600" aria-hidden />
             </span>
-            <p className="mt-3 text-sm font-medium text-neutral-900">
+            <p className="mt-3 text-sm font-medium text-foreground">
               Rien à l&apos;horizon
             </p>
-            <p className="mt-1 max-w-xs text-sm text-neutral-500">
+            <p className="mt-1 max-w-xs text-sm text-muted-foreground">
               Aucun départ, retour ni retard prévu. Profitez de cette
               accalmie&nbsp;!
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-border/60">
             {operations.map((op) => {
               const config = KIND_CONFIG[op.kind];
               const Icon = config.icon;
@@ -97,8 +107,10 @@ export function UpcomingOperations({
                 <li
                   key={op.key}
                   className={cn(
-                    "flex items-start gap-3 px-4 py-3",
-                    op.kind === "late" && "bg-red-50/60"
+                    "flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40",
+                    op.kind === "late" && "bg-red-50/60 hover:bg-red-50",
+                    op.kind === "late_departure" &&
+                      "bg-amber-50/60 hover:bg-amber-50"
                   )}
                 >
                   <span
@@ -115,18 +127,18 @@ export function UpcomingOperations({
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                       <Link
                         href={`/bookings/${op.bookingId}`}
-                        className="text-sm font-medium text-sky-700 hover:underline"
+                        className="text-sm font-medium text-primary hover:underline"
                       >
                         {op.bookingNumber}
                       </Link>
-                      <span className="truncate text-sm text-neutral-700">
+                      <span className="truncate text-sm text-foreground">
                         {op.customerName}
                       </span>
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {op.equipmentSummary || "Aucun matériel"}
                     </p>
-                    <p className="mt-1 text-xs text-neutral-500 sm:hidden">
+                    <p className="mt-1 text-xs text-muted-foreground sm:hidden">
                       {config.label} · {formatDateTime(op.at, timezone)}
                     </p>
                   </div>
@@ -136,7 +148,9 @@ export function UpcomingOperations({
                         "text-xs",
                         op.kind === "late"
                           ? "font-medium text-red-700"
-                          : "text-neutral-500"
+                          : op.kind === "late_departure"
+                            ? "font-medium text-amber-700"
+                            : "text-muted-foreground"
                       )}
                     >
                       {config.label} · {formatDateTime(op.at, timezone)}

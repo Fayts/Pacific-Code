@@ -115,6 +115,7 @@ export function NewCustomerDialog({
               name="type"
               render={({ field }) => (
                 <Select
+                  items={CUSTOMER_TYPE_LABELS}
                   value={field.value}
                   onValueChange={(v) => field.onChange(v as CustomerType)}
                 >
@@ -144,7 +145,7 @@ export function NewCustomerDialog({
                 {...register("companyName")}
               />
               {errors.companyName && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.companyName.message}
                 </p>
               )}
@@ -167,7 +168,7 @@ export function NewCustomerDialog({
                   {...register("lastName")}
                 />
                 {errors.lastName && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {errors.lastName.message}
                   </p>
                 )}
@@ -194,7 +195,7 @@ export function NewCustomerDialog({
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-red-600">{errors.email.message}</p>
+                <p className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
           </div>

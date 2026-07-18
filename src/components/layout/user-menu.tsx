@@ -36,11 +36,11 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+        className="rounded-full outline-none transition hover:brightness-105 focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Menu utilisateur"
       >
         <Avatar className="size-8">
-          <AvatarFallback className="bg-sky-100 text-sky-800 text-xs font-semibold">
+          <AvatarFallback className="bg-gradient-to-br from-pc-lagoon to-pc-turquoise text-xs font-semibold text-white">
             {formatInitials(userName || email)}
           </AvatarFallback>
         </Avatar>
@@ -48,7 +48,7 @@ export function UserMenu({
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-1.5">
           <p className="truncate text-sm font-medium">{userName}</p>
-          <p className="truncate text-xs text-neutral-500">{email}</p>
+          <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/settings" />}>

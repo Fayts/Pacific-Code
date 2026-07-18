@@ -28,6 +28,10 @@ import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { BUSINESS_TYPE_LABELS } from "@/lib/core/labels";
 import type { BusinessType } from "@/lib/types/database";
 
+const BUSINESS_TYPE_ITEMS = Object.entries(BUSINESS_TYPE_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
+
 export default function RegisterPage() {
   const router = useRouter();
   const { provider } = useAppData();
@@ -67,20 +71,24 @@ export default function RegisterPage() {
       toast.success(
         `Bienvenue ! Votre espace « ${values.companyName} » est prêt.`
       );
-      router.push("/dashboard");
+      // Direction l'onboarding : import rapide de l'activité.
+      router.push("/onboarding");
     });
   };
 
   return (
-    <Card>
+    <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-900/10 backdrop-blur-md">
       <CardHeader>
-        <CardTitle className="text-lg">Créer un compte</CardTitle>
+        <CardTitle className="text-xl">
+          Bienvenue à bord{" "}
+          <span aria-hidden className="align-middle text-base">🌺</span>
+        </CardTitle>
         <CardDescription>
-          Gérez votre activité de location en quelques minutes
+          Créez votre espace de gestion en moins de deux minutes
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+        <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
           <strong>Version de démonstration</strong> — le compte est créé
           instantanément sur cet appareil, sans email de confirmation. Votre
           espace arrive pré-rempli de données fictives pour explorer
@@ -164,6 +172,7 @@ export default function RegisterPage() {
               name="businessType"
               render={({ field }) => (
                 <Select
+                  items={BUSINESS_TYPE_ITEMS}
                   value={field.value}
                   onValueChange={(v) => field.onChange(v as BusinessType)}
                 >
@@ -171,19 +180,21 @@ export default function RegisterPage() {
                     <SelectValue placeholder="Choisir…" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(BUSINESS_TYPE_LABELS).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      )
-                    )}
+                    {BUSINESS_TYPE_ITEMS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button
+            type="submit"
+            className="h-10 w-full border-0 bg-gradient-to-r from-sky-600 via-cyan-500 to-teal-500 text-sm font-semibold text-white shadow-lg shadow-cyan-600/25 hover:brightness-105"
+            disabled={pending}
+          >
             {pending ? "Création du compte…" : "Créer mon compte"}
           </Button>
         </form>
