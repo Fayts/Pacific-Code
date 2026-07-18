@@ -1,7 +1,7 @@
 // Préparation des données du calendrier : dates de calendrier « pures »
 // (sans heure ni fuseau), construction de la grille de jours locaux,
 // affectation des réservations aux jours et détection de conflits.
-// Fonctions pures, exécutées côté serveur.
+// Fonctions pures, indépendantes de la source de données.
 
 import { isBlockingStatus } from "@/lib/core/booking-status";
 import {
