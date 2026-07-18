@@ -1,24 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+// Chat de l'assistant en mode démonstration : le moteur tourne
+// entièrement côté client sur la couche de données mock — aucun appel
+// réseau. La conversation vit en mémoire (non persistée en mode démo).
+// La connexion à un vrai modèle (Claude, OpenAI, Gemini) remplacera la
+// fonction `respond` sans toucher au reste de l'interface.
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { RotateCcw, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ProposalCard } from "@/components/assistant/proposal-card";
-import type {
-  AssistantChatResponse,
-  AssistantProposal,
-} from "@/lib/ai/proposals";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { runDemoAssistant } from "@/lib/ai/demo";
+import { createDemoToolkit } from "@/lib/ai/mock-toolkit";
+import type { AssistantProposal } from "@/lib/ai/proposals";
+import type { Organization } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   proposals?: AssistantProposal[];
-  /** Les propositions issues de l'historique ne sont plus confirmables. */
-  stale?: boolean;
 };
 
 const SUGGESTIONS = [
@@ -27,6 +31,9 @@ const SUGGESTIONS = [
   "Quelles locations sont en retard ?",
   "Combien de réservations avons-nous ce mois-ci ?",
 ];
+
+// Petit délai artificiel pour un rendu naturel de la réflexion.
+const THINKING_DELAY_MS = 350;
 
 // Rendu minimaliste du markdown de l'assistant (gras + listes).
 function renderContent(content: string) {
@@ -46,23 +53,17 @@ function renderContent(content: string) {
   });
 }
 
-export function AssistantChat({
-  conversationId: initialConversationId,
-  initialMessages,
-  currency,
-  demoMode,
-}: {
-  conversationId: string | null;
-  initialMessages: ChatMessage[];
-  currency: string;
-  demoMode: boolean;
-}) {
-  const router = useRouter();
-  const [conversationId, setConversationId] = useState(initialConversationId);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+export function AssistantChat({ organization }: { organization: Organization }) {
+  const { provider } = useAppData();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const toolkit = useMemo(
+    () => createDemoToolkit(provider, organization),
+    [provider, organization]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,43 +78,30 @@ export function AssistantChat({
     setPending(true);
 
     try {
-      const res = await fetch("/api/assistant/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, message: trimmed }),
-      });
-      const data = (await res.json()) as
-        | AssistantChatResponse
-        | { error: string };
-
-      if (!res.ok || "error" in data) {
-        const errorMessage =
-          "error" in data ? data.error : "Une erreur est survenue";
-        toast.error(errorMessage);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: `⚠️ ${errorMessage}`,
-          },
-        ]);
-        return;
-      }
-
-      setConversationId(data.conversationId);
+      const [result] = await Promise.all([
+        runDemoAssistant({ organization }, toolkit, trimmed),
+        new Promise((resolve) => setTimeout(resolve, THINKING_DELAY_MS)),
+      ]);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.text, proposals: data.proposals },
+        {
+          role: "assistant",
+          content: result.text,
+          proposals: result.proposals,
+        },
       ]);
     } catch {
-      toast.error("Connexion impossible. Réessayez.");
+      toast.error("L'assistant n'a pas pu répondre. Réessayez.");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "⚠️ Une erreur est survenue. Réessayez." },
+      ]);
     } finally {
       setPending(false);
     }
   }
 
   function newConversation() {
-    setConversationId(null);
     setMessages([]);
   }
 
@@ -122,7 +110,7 @@ export function AssistantChat({
       <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2">
         <span className="flex items-center gap-2 text-sm font-medium text-neutral-700">
           <Sparkles className="size-4 text-sky-700" aria-hidden />
-          {demoMode ? "Assistant (mode démo)" : "Assistant"}
+          Assistant (mode démo)
         </span>
         <Button
           variant="ghost"
@@ -181,9 +169,7 @@ export function AssistantChat({
                   <ProposalCard
                     key={i}
                     proposal={proposal}
-                    currency={currency}
-                    stale={message.stale}
-                    onDone={() => router.refresh()}
+                    currency={organization.currency}
                   />
                 ))}
               </div>

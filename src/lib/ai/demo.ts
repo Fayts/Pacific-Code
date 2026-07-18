@@ -1,10 +1,10 @@
-// Mode démonstration de l'assistant : sans clé API, les questions courantes
-// reçoivent des réponses déterministes construites à partir des VRAIES données
-// de l'organisation, via les mêmes exécuteurs d'outils que le mode LLM.
+// Mode démonstration de l'assistant : les questions courantes reçoivent
+// des réponses déterministes construites à partir des données de
+// l'organisation, via des exécuteurs d'outils interchangeables (mock
+// aujourd'hui, LLM + vraie source de données demain). Ce module est pur :
+// aucune dépendance à une source de données concrète.
 
-import type { OrgContext } from "@/lib/auth/context";
-import type { AssistantToolkit } from "@/lib/ai/tools";
-import type { AssistantProposal } from "@/lib/ai/proposals";
+import type { AssistantProposal, BookingProposal } from "@/lib/ai/proposals";
 import { resolvePeriodFr } from "@/lib/ai/dates-fr";
 import { toLocalDateTimeInput, dayRangeInTimeZone } from "@/lib/core/dates";
 import { formatMoney } from "@/lib/core/format";
@@ -14,7 +14,55 @@ export type DemoResult = {
   proposals: AssistantProposal[];
 };
 
-const HELP_TEXT = `Je suis en **mode démonstration** (aucune clé IA configurée) : je réponds à des questions types avec vos vraies données. Essayez par exemple :
+// Contrat minimal dont le moteur de démo a besoin — n'importe quelle
+// implémentation (mock, Supabase…) peut le satisfaire.
+export type DemoOrgContext = {
+  organization: { timezone: string; currency: string };
+};
+
+export type DemoExecutors = {
+  searchEquipment(input: {
+    query?: string;
+    status?: "available" | "maintenance" | "unavailable" | "all";
+  }): Promise<{ id: string; name: string; reference: string | null }[]>;
+  listAvailability(input: { startAt: string; endAt: string }): Promise<
+    { equipmentId: string; name: string; total: number; available: number }[]
+  >;
+  searchCustomers(input: {
+    query: string;
+  }): Promise<{ id: string; name: string }[]>;
+  listBookings(input: {
+    filter: "all" | "upcoming" | "in_progress" | "late" | "pending" | "completed";
+    startAt?: string;
+    endAt?: string;
+  }): Promise<
+    {
+      number: string;
+      status: string;
+      customer: string;
+      startAt: string;
+      endAt: string;
+      total: string;
+      equipment: string;
+    }[]
+  >;
+  getStats(input: { startAt: string; endAt: string }): Promise<{
+    bookingsCount: number;
+    revenue: string;
+    topEquipment: { name: string; revenue: string }[];
+  }>;
+  proposeBooking(input: {
+    customerId: string;
+    items: { equipmentId: string; quantity: number }[];
+    startAt: string;
+    endAt: string;
+    notes?: string;
+  }): Promise<BookingProposal | { error: string }>;
+};
+
+export type DemoToolkit = { executors: DemoExecutors };
+
+const HELP_TEXT = `Je suis en **mode démonstration** : je réponds à des questions types avec les données de votre espace. Essayez par exemple :
 
 - « Quels matériels sont disponibles samedi ? »
 - « Quelles sont les locations prévues demain ? »
@@ -24,7 +72,7 @@ const HELP_TEXT = `Je suis en **mode démonstration** (aucune clé IA configuré
 - « Quels matériels sont en maintenance ? »
 - « Crée une réservation pour Jean demain avec la Puzzi 10/1 »
 
-Pour des réponses libres, configurez une clé API (Anthropic, OpenAI ou Google) dans les variables d'environnement.`;
+Les réponses libres arriveront avec la connexion à un vrai modèle (Claude, OpenAI ou Gemini) dans la version en ligne — sans changer cette interface.`;
 
 function normalize(text: string): string {
   return text
@@ -34,8 +82,8 @@ function normalize(text: string): string {
 }
 
 export async function runDemoAssistant(
-  context: OrgContext,
-  toolkit: AssistantToolkit,
+  context: DemoOrgContext,
+  toolkit: DemoToolkit,
   message: string,
   now: Date = new Date()
 ): Promise<DemoResult> {

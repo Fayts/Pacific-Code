@@ -5,16 +5,17 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AlertTriangle, CalendarPlus, Check, UserPlus, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createBooking } from "@/server/actions/bookings";
-import { createCustomer } from "@/server/actions/customers";
-import { setEquipmentStatus } from "@/server/actions/equipment";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { createBooking } from "@/lib/services/booking-service";
+import { createCustomer } from "@/lib/services/customer-service";
+import { setEquipmentStatus } from "@/lib/services/equipment-service";
 import { formatMoney } from "@/lib/core/format";
 import type { AssistantProposal } from "@/lib/ai/proposals";
 
 // Carte de confirmation d'une action préparée par l'assistant.
 // Rien n'est exécuté tant que l'utilisateur ne clique pas « Confirmer » ;
-// la confirmation passe par les server actions habituelles (re-validation
-// complète côté serveur, y compris la disponibilité).
+// la confirmation passe par les services habituels (re-validation
+// complète, y compris la disponibilité).
 export function ProposalCard({
   proposal,
   currency,
@@ -26,6 +27,7 @@ export function ProposalCard({
   stale?: boolean;
   onDone?: () => void;
 }) {
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<
     | { status: "confirmed"; link?: { href: string; label: string } }
@@ -37,7 +39,7 @@ export function ProposalCard({
     startTransition(async () => {
       switch (proposal.kind) {
         case "booking_proposal": {
-          const res = await createBooking(proposal.payload);
+          const res = await createBooking(proposal.payload, provider);
           if (!res.ok) {
             toast.error(res.error);
             return;
@@ -53,7 +55,7 @@ export function ProposalCard({
           break;
         }
         case "customer_proposal": {
-          const res = await createCustomer(proposal.payload);
+          const res = await createCustomer(proposal.payload, provider);
           if (!res.ok) {
             toast.error(res.error);
             return;
@@ -69,7 +71,11 @@ export function ProposalCard({
           break;
         }
         case "equipment_status_proposal": {
-          const res = await setEquipmentStatus(proposal.payload);
+          const res = await setEquipmentStatus(
+            proposal.payload.equipmentId,
+            proposal.payload.status,
+            provider
+          );
           if (!res.ok) {
             toast.error(res.error);
             return;

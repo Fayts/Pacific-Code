@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -23,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateOrganizationSettings } from "@/server/actions/organizations";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { updateOrganizationSettings } from "@/lib/services/organization-service";
 import {
   organizationSettingsSchema,
   type OrganizationSettingsInput,
@@ -74,7 +74,7 @@ export function SettingsForm({
   organization: Organization;
   readOnly?: boolean;
 }) {
-  const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
 
   const {
@@ -111,7 +111,7 @@ export function SettingsForm({
 
   const onSubmit = (values: OrganizationSettingsInput) => {
     startTransition(async () => {
-      const result = await updateOrganizationSettings(values);
+      const result = await updateOrganizationSettings(values, provider);
       if (!result.ok) {
         if (result.fieldErrors) {
           for (const [field, messages] of Object.entries(result.fieldErrors)) {
@@ -124,7 +124,6 @@ export function SettingsForm({
         return;
       }
       toast.success("Paramètres enregistrés");
-      router.refresh();
     });
   };
 
