@@ -1,13 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { archiveCustomer, unarchiveCustomer } from "@/server/actions/customers";
+import { useAppData } from "@/components/providers/app-data-provider";
+import {
+  archiveCustomer,
+  unarchiveCustomer,
+} from "@/lib/services/customer-service";
 
-/** Archiver / restaurer un client, avec confirmation. */
+/**
+ * Archiver / restaurer un client, avec confirmation. Les mutations
+ * passent par le service ; l'UI se rafraîchit via l'abonnement du
+ * provider (pas de router.refresh nécessaire).
+ */
 export function CustomerActions({
   customerId,
   customerName,
@@ -17,7 +24,7 @@ export function CustomerActions({
   customerName: string;
   archived: boolean;
 }) {
-  const router = useRouter();
+  const { provider } = useAppData();
 
   if (archived) {
     return (
@@ -32,13 +39,12 @@ export function CustomerActions({
         description={`${customerName} redeviendra visible dans votre liste de clients.`}
         confirmLabel="Restaurer"
         onConfirm={async () => {
-          const result = await unarchiveCustomer(customerId);
+          const result = await unarchiveCustomer(customerId, provider);
           if (!result.ok) {
             toast.error(result.error);
             return;
           }
           toast.success("Client restauré");
-          router.refresh();
         }}
       />
     );
@@ -60,13 +66,12 @@ export function CustomerActions({
       confirmLabel="Archiver"
       destructive
       onConfirm={async () => {
-        const result = await archiveCustomer(customerId);
+        const result = await archiveCustomer(customerId, provider);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
         toast.success("Client archivé");
-        router.refresh();
       }}
     />
   );

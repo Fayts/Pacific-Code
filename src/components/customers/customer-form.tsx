@@ -29,7 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createCustomer, updateCustomer } from "@/server/actions/customers";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { createCustomer, updateCustomer } from "@/lib/services/customer-service";
 import { customerSchema, type CustomerInput } from "@/lib/validations/customer";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/core/labels";
 import type { Customer, CustomerType } from "@/lib/types/database";
@@ -49,6 +50,7 @@ const FIELD_NAMES: FieldPath<CustomerInput>[] = [
 /** Formulaire de création / modification d'un client. */
 export function CustomerForm({ customer }: { customer?: Customer }) {
   const router = useRouter();
+  const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
 
   const {
@@ -87,7 +89,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
   const onSubmit = (values: CustomerInput) => {
     startTransition(async () => {
       if (customer) {
-        const result = await updateCustomer(customer.id, values);
+        const result = await updateCustomer(customer.id, values, provider);
         if (!result.ok) {
           toast.error(result.error);
           applyFieldErrors(result.fieldErrors);
@@ -96,7 +98,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
         toast.success("Client mis à jour");
         router.push(`/customers/${customer.id}`);
       } else {
-        const result = await createCustomer(values);
+        const result = await createCustomer(values, provider);
         if (!result.ok) {
           toast.error(result.error);
           applyFieldErrors(result.fieldErrors);
@@ -105,7 +107,6 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
         toast.success("Client créé");
         router.push(`/customers/${result.data.customerId}`);
       }
-      router.refresh();
     });
   };
 
