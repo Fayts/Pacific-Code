@@ -19,8 +19,12 @@ import { computeBookingTotals } from "@/lib/core/pricing";
 import { canTransition, isBlockingStatus } from "@/lib/core/booking-status";
 import { formatCustomerName } from "@/lib/core/format";
 import type {
+  AgentSettingsRepository,
   AuthRepository,
   BookingRepository,
+  ChannelRepository,
+  InboxRepository,
+  NewInboxMessage,
   BookingWithRelations,
   CategoryRepository,
   CustomerDraft,
@@ -33,6 +37,14 @@ import type {
   SessionUser,
   SignUpInput,
 } from "@/lib/data/repositories";
+import type {
+  AgentSettings,
+  ChannelConnection,
+  ChannelKind,
+  ConversationStatus,
+  InboxConversation,
+  InboxMessage,
+} from "@/lib/types/inbox";
 import { buildSeed, MOCK_DB_VERSION, type MockDb } from "@/lib/data/mock/seed";
 import {
   createBrowserStorage,
@@ -444,6 +456,158 @@ export class MockDataProvider implements DataProvider {
         this.touch(customer);
         this.persist();
       }
+    },
+  };
+
+  // ----------------------------------------------------------
+  // Agent IA commercial : canaux, boîte de réception, réglages
+  // ----------------------------------------------------------
+
+  channels: ChannelRepository = {
+    list: async (): Promise<ChannelConnection[]> => [...this.load().channels],
+
+    connect: async (channel: ChannelKind, displayName: string) => {
+      const db = this.load();
+      const nowIso = this.now().toISOString();
+      let row = db.channels.find((c) => c.channel === channel);
+      if (!row) {
+        row = {
+          id: uuid(),
+          organization_id: db.organization.id,
+          channel,
+          status: "connected",
+          display_name: displayName,
+          connected_at: nowIso,
+          created_at: nowIso,
+          updated_at: nowIso,
+        };
+        db.channels.push(row);
+      } else {
+        row.status = "connected";
+        row.display_name = displayName;
+        row.connected_at = nowIso;
+        this.touch(row);
+      }
+      this.persist();
+      return row;
+    },
+
+    disconnect: async (channel: ChannelKind): Promise<void> => {
+      const db = this.load();
+      const row = db.channels.find((c) => c.channel === channel);
+      if (!row) return;
+      row.status = "disconnected";
+      row.connected_at = null;
+      this.touch(row);
+      this.persist();
+    },
+  };
+
+  inbox: InboxRepository = {
+    listConversations: async (): Promise<InboxConversation[]> =>
+      [...this.load().conversations].sort((a, b) =>
+        b.last_message_at.localeCompare(a.last_message_at)
+      ),
+
+    getConversation: async (id: string) =>
+      this.load().conversations.find((c) => c.id === id) ?? null,
+
+    listMessages: async (conversationId: string): Promise<InboxMessage[]> =>
+      this.load()
+        .inboxMessages.filter((m) => m.conversation_id === conversationId)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+
+    appendMessage: async (conversationId: string, message: NewInboxMessage) => {
+      const db = this.load();
+      const conversation = db.conversations.find((c) => c.id === conversationId);
+      if (!conversation) return null;
+      const nowIso = this.now().toISOString();
+      const row: InboxMessage = {
+        id: uuid(),
+        organization_id: db.organization.id,
+        conversation_id: conversationId,
+        direction: message.direction,
+        author: message.author,
+        body: message.body,
+        created_at: nowIso,
+      };
+      db.inboxMessages.push(row);
+      conversation.last_message_at = nowIso;
+      this.touch(conversation);
+      this.persist();
+      return row;
+    },
+
+    setStatus: async (
+      conversationId: string,
+      status: ConversationStatus
+    ): Promise<void> => {
+      const db = this.load();
+      const conversation = db.conversations.find((c) => c.id === conversationId);
+      if (!conversation) return;
+      conversation.status = status;
+      this.touch(conversation);
+      this.persist();
+    },
+
+    createConversation: async (input) => {
+      const db = this.load();
+      const nowIso = this.now().toISOString();
+      // Rapprochement simple avec le carnet clients par email/téléphone.
+      const contact = (input.customerContact ?? "").trim().toLowerCase();
+      const known = contact
+        ? db.customers.find(
+            (c) =>
+              !c.archived_at &&
+              ((c.email && c.email.toLowerCase() === contact) ||
+                (c.phone && c.phone.replace(/\s/g, "") === contact.replace(/\s/g, "")))
+          )
+        : undefined;
+      const conversation: InboxConversation = {
+        id: uuid(),
+        organization_id: db.organization.id,
+        channel: input.channel,
+        customer_name: input.customerName,
+        customer_contact: input.customerContact ?? null,
+        customer_id: known?.id ?? null,
+        subject: input.subject ?? null,
+        status: "new",
+        last_message_at: nowIso,
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+      db.conversations.push(conversation);
+      db.inboxMessages.push({
+        id: uuid(),
+        organization_id: db.organization.id,
+        conversation_id: conversation.id,
+        direction: "inbound",
+        author: "customer",
+        body: input.body,
+        created_at: nowIso,
+      });
+      this.persist();
+      return conversation;
+    },
+  };
+
+  agentSettings: AgentSettingsRepository = {
+    get: async (): Promise<AgentSettings> => this.load().agentSettings,
+
+    update: async (patch: Partial<AgentSettings>): Promise<AgentSettings> => {
+      const db = this.load();
+      db.agentSettings = {
+        ...db.agentSettings,
+        ...patch,
+        permissions: {
+          ...db.agentSettings.permissions,
+          ...(patch.permissions ?? {}),
+        },
+        organization_id: db.organization.id,
+        updated_at: this.now().toISOString(),
+      };
+      this.persist();
+      return db.agentSettings;
     },
   };
 

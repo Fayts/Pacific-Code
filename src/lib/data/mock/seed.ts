@@ -15,9 +15,17 @@ import type {
   EquipmentItem,
   Organization,
 } from "@/lib/types/database";
+import type {
+  AgentSettings,
+  ChannelConnection,
+  InboxConversation,
+  InboxMessage,
+} from "@/lib/types/inbox";
 import type { SessionUser } from "@/lib/data/repositories";
 
-export const MOCK_DB_VERSION = 1;
+// v2 : ajout de l'agent IA commercial (canaux, boîte de réception, réglages).
+// Un document localStorage d'une version antérieure est re-seedé.
+export const MOCK_DB_VERSION = 2;
 
 // IDs stables (format UUID pour rester compatibles avec les validations zod).
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -37,6 +45,14 @@ const B2 = "62222222-2222-4222-8222-222222222222";
 const B3 = "63333333-3333-4333-8333-333333333333";
 const B4 = "64444444-4444-4444-8444-444444444444";
 export const B5_LATE = "65555555-5555-4555-8555-555555555555";
+const CH_MESSENGER = "91111111-1111-4111-8111-111111111111";
+const CH_GMAIL = "92222222-2222-4222-8222-222222222222";
+const CH_WHATSAPP = "93333333-3333-4333-8333-333333333333";
+export const CONV_PUZZI = "a1111111-1111-4111-8111-111111111111";
+export const CONV_JEAN = "a2222222-2222-4222-8222-222222222222";
+export const CONV_K5 = "a3333333-3333-4333-8333-333333333333";
+export const CONV_FORM = "a4444444-4444-4444-8444-444444444444";
+export const CONV_COMPLAINT = "a5555555-5555-4555-8555-555555555555";
 
 export type MockDb = {
   version: number;
@@ -51,6 +67,10 @@ export type MockDb = {
   bookingItems: BookingItem[];
   history: BookingStatusHistory[];
   counters: Array<{ year: number; seq: number }>;
+  channels: ChannelConnection[];
+  conversations: InboxConversation[];
+  inboxMessages: InboxMessage[];
+  agentSettings: AgentSettings;
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -405,6 +425,201 @@ export function buildSeed(now: Date = new Date()): MockDb {
     hist(B5_LATE, "confirmed", "in_progress", t - 3 * DAY),
   ];
 
+  // ----- Agent IA commercial (canaux, boîte de réception, réglages) -----
+
+  const channelDefaults = {
+    organization_id: ORG_ID,
+    created_at: created,
+    updated_at: created,
+  };
+
+  const channels: ChannelConnection[] = [
+    {
+      ...channelDefaults,
+      id: CH_MESSENGER,
+      channel: "messenger",
+      status: "connected",
+      display_name: "Pacific Rent&Clean — Page Facebook",
+      connected_at: created,
+    },
+    {
+      ...channelDefaults,
+      id: CH_GMAIL,
+      channel: "gmail",
+      status: "connected",
+      display_name: "contact@pacific-rentclean.pf",
+      connected_at: created,
+    },
+    {
+      ...channelDefaults,
+      id: CH_WHATSAPP,
+      channel: "whatsapp",
+      status: "disconnected",
+      display_name: null,
+      connected_at: null,
+    },
+  ];
+
+  const conv = (
+    id: string,
+    channel: InboxConversation["channel"],
+    customerName: string,
+    customerContact: string | null,
+    customerId: string | null,
+    subject: string | null,
+    status: InboxConversation["status"],
+    lastMs: number
+  ): InboxConversation => ({
+    id,
+    organization_id: ORG_ID,
+    channel,
+    customer_name: customerName,
+    customer_contact: customerContact,
+    customer_id: customerId,
+    subject,
+    status,
+    last_message_at: iso(lastMs),
+    created_at: iso(lastMs),
+    updated_at: iso(lastMs),
+  });
+
+  const conversations: InboxConversation[] = [
+    conv(
+      CONV_PUZZI,
+      "messenger",
+      "Vaimiti Teriitehau",
+      "m.me/vaimiti.teriitehau",
+      null,
+      null,
+      "new",
+      t - 2 * HOUR
+    ),
+    conv(
+      CONV_JEAN,
+      "gmail",
+      "Jean Dupont",
+      "jean.dupont@mail.pf",
+      CUST_JEAN,
+      "Location shampouineuse",
+      "new",
+      t - 5 * HOUR
+    ),
+    conv(
+      CONV_K5,
+      "messenger",
+      "Tehani Vairaaroa",
+      "m.me/tehani.vairaaroa",
+      null,
+      null,
+      "auto_replied",
+      t - 1 * DAY
+    ),
+    conv(
+      CONV_FORM,
+      "form",
+      "Heiata Wong",
+      "heiata.wong@mail.pf",
+      null,
+      "Demande via le formulaire public",
+      "new",
+      t - 26 * HOUR
+    ),
+    conv(
+      CONV_COMPLAINT,
+      "gmail",
+      "Moana Tehani",
+      "moana.tehani@mail.pf",
+      CUST_MOANA,
+      "Problème avec la machine louée",
+      "new",
+      t - 40 * 60 * 1000
+    ),
+  ];
+
+  let msgSeq = 0;
+  const msg = (
+    conversationId: string,
+    direction: InboxMessage["direction"],
+    author: InboxMessage["author"],
+    body: string,
+    atMs: number
+  ): InboxMessage => ({
+    id: `b1111111-1111-4111-8111-1111111111${(msgSeq++).toString().padStart(2, "0")}`,
+    organization_id: ORG_ID,
+    conversation_id: conversationId,
+    direction,
+    author,
+    body,
+    created_at: iso(atMs),
+  });
+
+  const inboxMessages: InboxMessage[] = [
+    msg(
+      CONV_PUZZI,
+      "inbound",
+      "customer",
+      "Bonjour, je voudrais louer un Kärcher Puzzi samedi matin jusqu'à dimanche soir. C'est possible ?",
+      t - 2 * HOUR
+    ),
+    msg(
+      CONV_JEAN,
+      "inbound",
+      "customer",
+      "Bonjour,\n\nJe souhaite relouer le Kärcher Puzzi 10/1 de mercredi à vendredi pour refaire les moquettes du salon.\n\nMerci d'avance,\nJean Dupont",
+      t - 5 * HOUR
+    ),
+    msg(
+      CONV_K5,
+      "inbound",
+      "customer",
+      "Salut, c'est combien le Kärcher K5 pour une journée ? Il est dispo demain ?",
+      t - 1 * DAY - 10 * 60 * 1000
+    ),
+    msg(
+      CONV_K5,
+      "outbound",
+      "agent",
+      "Bonjour 👋\n\nLe Kärcher K5 Premium est à 5 990 XPF la journée (caution 30 000 XPF). Il est actuellement en maintenance : nous ne pouvons malheureusement pas le proposer pour demain. Nous vous prévenons dès qu'il est de nouveau disponible.\n\nL'équipe Pacific Rent&Clean",
+      t - 1 * DAY
+    ),
+    msg(
+      CONV_FORM,
+      "inbound",
+      "customer",
+      "Bonjour, est-ce que vous louez des machines pour nettoyer les canapés ? Merci.",
+      t - 26 * HOUR
+    ),
+    msg(
+      CONV_COMPLAINT,
+      "inbound",
+      "customer",
+      "Bonjour,\n\nLa machine que je loue s'est arrêtée de fonctionner hier soir, je suis très mécontente. Je demande un remboursement de ma location.\n\nMoana Tehani",
+      t - 40 * 60 * 1000
+    ),
+  ];
+
+  const agentSettings: AgentSettings = {
+    organization_id: ORG_ID,
+    mode: "auto",
+    tone: "warm",
+    signature: "L'équipe Pacific Rent&Clean",
+    practical_info:
+      "Retrait et retour à Papeete, du lundi au samedi de 7 h 30 à 17 h 00. " +
+      "Livraison possible sur Tahiti (sur devis). Caution demandée à la remise " +
+      "du matériel. (Données fictives)",
+    permissions: {
+      read_messages: true,
+      detect_requests: true,
+      check_availability: true,
+      compute_prices: true,
+      prepare_replies: true,
+      auto_reply_simple: true,
+      send_form: true,
+    },
+    activated_at: created,
+    updated_at: created,
+  };
+
   return {
     version: MOCK_DB_VERSION,
     seededAt: now.toISOString(),
@@ -425,5 +640,9 @@ export function buildSeed(now: Date = new Date()): MockDb {
     bookingItems,
     history,
     counters: [{ year, seq: 5 }],
+    channels,
+    conversations,
+    inboxMessages,
+    agentSettings,
   };
 }

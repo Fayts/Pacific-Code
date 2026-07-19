@@ -23,6 +23,15 @@ import type {
   AvailabilityResult,
   BusinessType,
 } from "@/lib/types/database";
+import type {
+  AgentSettings,
+  ChannelConnection,
+  ChannelKind,
+  ConversationStatus,
+  InboxConversation,
+  InboxMessage,
+  MessageAuthor,
+} from "@/lib/types/inbox";
 
 // ------------------------------------------------------------
 // Session (authentification simulée en mode mock)
@@ -171,6 +180,47 @@ export interface BookingRepository {
 }
 
 // ------------------------------------------------------------
+// Agent IA commercial : canaux, boîte de réception, réglages
+// ------------------------------------------------------------
+
+export interface ChannelRepository {
+  list(): Promise<ChannelConnection[]>;
+  /** Connexion simulée en mode mock ; OAuth réel avec le backend. */
+  connect(channel: ChannelKind, displayName: string): Promise<ChannelConnection>;
+  disconnect(channel: ChannelKind): Promise<void>;
+}
+
+export type NewInboxMessage = {
+  direction: "inbound" | "outbound";
+  author: MessageAuthor;
+  body: string;
+};
+
+export interface InboxRepository {
+  listConversations(): Promise<InboxConversation[]>;
+  getConversation(id: string): Promise<InboxConversation | null>;
+  listMessages(conversationId: string): Promise<InboxMessage[]>;
+  appendMessage(
+    conversationId: string,
+    message: NewInboxMessage
+  ): Promise<InboxMessage | null>;
+  setStatus(conversationId: string, status: ConversationStatus): Promise<void>;
+  /** Nouvelle conversation entrante (formulaire public, simulation, webhooks demain). */
+  createConversation(input: {
+    channel: ChannelKind;
+    customerName: string;
+    customerContact?: string;
+    subject?: string;
+    body: string;
+  }): Promise<InboxConversation>;
+}
+
+export interface AgentSettingsRepository {
+  get(): Promise<AgentSettings>;
+  update(patch: Partial<AgentSettings>): Promise<AgentSettings>;
+}
+
+// ------------------------------------------------------------
 // Fournisseur agrégé
 // ------------------------------------------------------------
 
@@ -183,6 +233,9 @@ export interface DataProvider {
   equipment: EquipmentRepository;
   customers: CustomerRepository;
   bookings: BookingRepository;
+  channels: ChannelRepository;
+  inbox: InboxRepository;
+  agentSettings: AgentSettingsRepository;
   /** Réabonne l'UI aux changements de données (retourne un désabonnement). */
   subscribe(listener: () => void): () => void;
   /** Restaure le jeu de données de démonstration. */
