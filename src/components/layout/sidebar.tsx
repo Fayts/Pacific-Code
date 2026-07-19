@@ -35,6 +35,7 @@ export function SidebarNavList({
             <Link
               href={item.href}
               onClick={onNavigate}
+              data-guide={item.href}
               className={cn(
                 "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200",
                 active

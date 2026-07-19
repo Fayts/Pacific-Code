@@ -31,7 +31,12 @@ import {
   type FleetCounts,
 } from "@/components/dashboard/fleet-summary";
 import { QuickActions } from "@/components/dashboard/quick-actions";
-import { WelcomeScreen } from "@/components/dashboard/welcome";
+import { ImportHeaderAction } from "@/components/dashboard/import-header-action";
+import { ActivationScreen } from "@/components/dashboard/activation-screen";
+import {
+  computeOnboardingProgress,
+  isBusinessUnconfigured,
+} from "@/lib/core/onboarding";
 import DashboardLoading from "@/app/(app)/dashboard/loading";
 
 const MAX_OPERATIONS = 8;
@@ -73,9 +78,14 @@ export function DashboardClient() {
 
   const { bookings, equipment, customers } = data;
 
-  // État vide global : organisation sans matériel, client ni réservation.
-  if (equipment.length === 0 && customers.length === 0 && bookings.length === 0) {
-    return <WelcomeScreen />;
+  // Espace non configuré : l'activation (import express) remplace le
+  // dashboard tant que rien n'existe et que l'onboarding n'est pas terminé.
+  if (isBusinessUnconfigured(org, equipment, customers, bookings.length)) {
+    return (
+      <ActivationScreen
+        progress={computeOnboardingProgress(org, equipment, customers)}
+      />
+    );
   }
 
   const activeBookings = bookings
@@ -224,6 +234,11 @@ export function DashboardClient() {
       <PageHeader
         title={firstName ? `Bonjour ${firstName}` : "Bonjour"}
         description={dateSubtitle}
+        actions={
+          <ImportHeaderAction
+            configured={org.onboarding_completed_at !== null}
+          />
+        }
       />
 
       <div className="space-y-4">

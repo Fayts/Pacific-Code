@@ -7,6 +7,7 @@ import {
   Copy,
   ExternalLink,
   PartyPopper,
+  UserPlus,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -132,18 +133,25 @@ export function SuccessStep({
         >
           Voir mon catalogue
         </Button>
-        <Button variant="outline" render={<Link href="/reserver/apercu" />}>
-          <ExternalLink className="size-4" aria-hidden />
-          Ouvrir mon espace de réservation
-        </Button>
         <Button variant="outline" onClick={copyLink}>
           <Copy className="size-4" aria-hidden />
-          Copier mon lien public
+          Copier mon lien de réservation
+        </Button>
+        <Button variant="outline" render={<Link href="/customers/new" />}>
+          <UserPlus className="size-4" aria-hidden />
+          Tester mon formulaire client
         </Button>
       </motion.div>
       <p className="mt-2 text-xs text-muted-foreground/70">
-        En mode démonstration, l’espace public n’est visible que sur cet
-        appareil (les données vivent dans votre navigateur).
+        <Link
+          href="/reserver/apercu"
+          className="font-medium text-primary hover:underline"
+        >
+          <ExternalLink className="inline size-3" aria-hidden /> Ouvrir mon
+          espace de réservation
+        </Link>{" "}
+        — en mode démonstration, il n’est visible que sur cet appareil (les
+        données vivent dans votre navigateur).
       </p>
 
       <motion.div

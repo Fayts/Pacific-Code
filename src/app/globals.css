@@ -183,6 +183,38 @@
   animation: pc-page 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Halo qui respire lentement (carte d'import du dashboard). */
+@keyframes pc-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.85;
+  }
+}
+
+.pc-breathe {
+  animation: pc-breathe 4.5s ease-in-out infinite;
+}
+
+/* Petit rebond vertical de l'icône d'import. */
+@keyframes pc-lift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.pc-lift {
+  animation: pc-lift 2.6s ease-in-out infinite;
+}
+
 /* Invitation à scroller en bas du héro. */
 @keyframes pc-bob {
   0%,
@@ -223,7 +255,9 @@
   .pc-rise,
   .pc-float,
   .pc-bob,
-  .pc-page {
+  .pc-page,
+  .pc-breathe,
+  .pc-lift {
     animation: none;
   }
   .pc-rise {

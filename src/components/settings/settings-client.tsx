@@ -5,8 +5,9 @@
 // une note de démonstration.
 
 import Link from "next/link";
-import { Upload } from "lucide-react";
+import { Compass, Upload } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
+import { useGuide } from "@/components/guide/guide-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ import { DemoDataCard } from "@/components/settings/demo-data-card";
 
 export function SettingsClient() {
   const { organization } = useAppData();
+  const guide = useGuide();
 
   if (!organization) {
     return (
@@ -32,10 +34,16 @@ export function SettingsClient() {
         title="Paramètres"
         description="Coordonnées de votre entreprise, formats d'affichage et numérotation des réservations."
         actions={
-          <Button variant="outline" render={<Link href="/onboarding" />}>
-            <Upload className="size-4" aria-hidden />
-            Importer mon activité
-          </Button>
+          <>
+            <Button variant="outline" onClick={guide.restart}>
+              <Compass className="size-4" aria-hidden />
+              Revoir la visite guidée
+            </Button>
+            <Button variant="outline" render={<Link href="/onboarding" />}>
+              <Upload className="size-4" aria-hidden />
+              Importer mon activité
+            </Button>
+          </>
         }
       />
 
