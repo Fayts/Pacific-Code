@@ -9,9 +9,15 @@ services:
         NEXT_PUBLIC_SITE_URL: https://pacific-code.duckdns.org
     image: pacific-code
     container_name: pacific-code
-    environment:
-      # Assistant IA en mode démonstration : aucune clé API requise.
-      AI_PROVIDER: demo
+    # Clés IA (agent d'onboarding + assistant) : déclarées dans
+    # /root/pacific-code.env — HORS du dossier déployé, pour survivre aux
+    # redéploiements. Sans fichier : mode démonstration, aucune clé requise.
+    # Contenu attendu :
+    #   AI_PROVIDER=anthropic
+    #   ANTHROPIC_API_KEY=sk-ant-…
+    env_file:
+      - path: /root/pacific-code.env
+        required: false
     restart: unless-stopped
     networks:
       - claude-ia_default

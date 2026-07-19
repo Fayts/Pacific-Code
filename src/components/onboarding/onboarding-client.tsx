@@ -10,7 +10,7 @@ import { useAppData } from "@/components/providers/app-data-provider";
 import { MethodSelector } from "@/components/onboarding/method-selector";
 import { PasteImportStep } from "@/components/onboarding/paste-import-step";
 import { FileImportStep } from "@/components/onboarding/file-import-step";
-import { AssistantStep } from "@/components/onboarding/assistant-step";
+import { AgentStep } from "@/components/onboarding/agent/agent-step";
 import { ExpressStep } from "@/components/onboarding/express-step";
 import { WebsiteImportStep } from "@/components/onboarding/website-import-step";
 import { ReviewStep } from "@/components/onboarding/review-step";
@@ -20,9 +20,9 @@ import type {
   ImportSessionData,
   ImportSource,
   ParsedBusiness,
-  ParsedItem,
 } from "@/lib/types/import";
 import type { AnalyzeOutcome } from "@/lib/import/ai";
+import { applyDraftToSession } from "@/lib/agent/to-import-session";
 import { markDuplicates } from "@/lib/import/duplicates";
 import { runImport } from "@/lib/import/import-runner";
 import {
@@ -31,6 +31,7 @@ import {
   loadSession,
   saveSession,
 } from "@/lib/import/session-store";
+import { clearConversation, loadConversation } from "@/lib/agent/store";
 import type { EquipmentCategory, EquipmentItem } from "@/lib/types/database";
 
 type Phase = "method" | "input" | "review" | "importing" | "success";
@@ -45,17 +46,20 @@ const PHASE_LABELS: Array<{ id: Phase; label: string }> = [
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function OnboardingClient() {
-  const { provider } = useAppData();
+  const { provider, session: appSession } = useAppData();
+  const userId = appSession?.user.id ?? null;
   const [phase, setPhase] = useState<Phase>("method");
   const [session, setSession] = useState<ImportSessionData | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [resumable, setResumable] = useState<ImportSessionData | null>(null);
+  const [agentResumable, setAgentResumable] = useState(false);
   const [existingEquipment, setExistingEquipment] = useState<EquipmentItem[]>([]);
   const [existingCategories, setExistingCategories] = useState<EquipmentCategory[]>([]);
   const importing = phase === "importing";
   const restored = useRef(false);
 
-  // Contexte existant (doublons + catégories) et reprise de brouillon.
+  // Contexte existant (doublons + catégories) et reprises de brouillons
+  // (session d'import et conversation avec l'agent).
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
@@ -74,12 +78,18 @@ export function OnboardingClient() {
         ) {
           setResumable(draft);
         }
+        if (userId) {
+          const conversation = loadConversation(userId);
+          setAgentResumable(
+            Boolean(conversation?.messages.some((m) => m.role === "user"))
+          );
+        }
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [provider]);
+  }, [provider, userId]);
 
   // Sauvegarde automatique du brouillon.
   useEffect(() => {
@@ -140,6 +150,9 @@ export function OnboardingClient() {
       return;
     }
     clearSession();
+    // Le brouillon de l'agent est importé : la conversation repart à neuf.
+    if (userId) clearConversation(userId);
+    setAgentResumable(false);
     setReport(result.data);
     setPhase("success");
   };
@@ -150,8 +163,10 @@ export function OnboardingClient() {
     return index === -1 ? 0 : index;
   }, [phase]);
 
+  const wide = phase === "input" && session?.source === "assistant";
+
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className={wide ? "mx-auto max-w-7xl" : "mx-auto max-w-5xl"}>
       <PageHeader
         title="Créer mon entreprise rapidement"
         description="Importez votre activité en quelques minutes — tout est vérifié avant d’être créé."
@@ -201,6 +216,35 @@ export function OnboardingClient() {
           ))}
         </div>
       </div>
+
+      {/* Conversation avec l'agent à reprendre */}
+      {phase === "method" && agentResumable && !resumable && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.05] px-4 py-3">
+          <p className="flex-1 text-sm text-foreground">
+            Une conversation avec l’agent IA est en cours — votre brouillon
+            vous attend.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              setAgentResumable(false);
+              startMethod("assistant");
+            }}
+          >
+            Reprendre la conversation
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (userId) clearConversation(userId);
+              setAgentResumable(false);
+            }}
+          >
+            Supprimer
+          </Button>
+        </div>
+      )}
 
       {/* Brouillon à reprendre */}
       {phase === "method" && resumable && (
@@ -262,17 +306,11 @@ export function OnboardingClient() {
             />
           )}
           {phase === "input" && session?.source === "assistant" && (
-            <AssistantStep
-              onComplete={(items: ParsedItem[], business: ParsedBusiness, mode) =>
-                goToReview(
-                  (base) => ({
-                    ...base,
-                    items: [...base.items, ...items],
-                    business: { ...base.business, ...compactBusiness(business) },
-                  }),
-                  mode
-                )
+            <AgentStep
+              onReview={(draft) =>
+                goToReview((base) => applyDraftToSession(draft, base))
               }
+              onUseTextMethod={() => startMethod("text")}
             />
           )}
           {phase === "input" && session?.source === "express" && (

@@ -27,6 +27,14 @@ const METHODS: Array<{
   badge?: string;
 }> = [
   {
+    id: "assistant",
+    icon: Sparkles,
+    title: "Je décris mon activité",
+    text: "Conversez avec l’agent IA : il construit votre entreprise, vos biens et vos tarifs avec vous, en direct.",
+    cta: "Démarrer avec l’agent IA",
+    badge: "Recommandé",
+  },
+  {
     id: "file",
     icon: FileSpreadsheet,
     title: "J’ai déjà un catalogue",
@@ -39,13 +47,6 @@ const METHODS: Array<{
     title: "Je colle mes annonces",
     text: "Collez une description ou plusieurs annonces, l’analyse fait le tri.",
     cta: "Coller un texte",
-  },
-  {
-    id: "assistant",
-    icon: Sparkles,
-    title: "Je décris mon activité",
-    text: "Répondez à quelques questions et laissez l’assistant préparer votre catalogue.",
-    cta: "Démarrer avec l’IA",
   },
   {
     id: "express",
@@ -93,7 +94,14 @@ export function MethodSelector({
                   <Icon className="size-5" aria-hidden />
                 </span>
                 {method.badge && (
-                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1",
+                      method.badge === "Recommandé"
+                        ? "bg-pc-turquoise/10 text-pc-lagoon ring-pc-turquoise/30"
+                        : "bg-amber-50 text-amber-800 ring-amber-200"
+                    )}
+                  >
                     {method.badge}
                   </span>
                 )}
