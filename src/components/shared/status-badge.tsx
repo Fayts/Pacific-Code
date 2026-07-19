@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import {
   BOOKING_STATUS,
+  CONVERSATION_STATUS,
   DEPOSIT_STATUS,
   EQUIPMENT_STATUS,
   PAYMENT_STATUS,
@@ -8,6 +9,7 @@ import {
   type EquipmentDisplayStatus,
 } from "@/lib/core/labels";
 import type { DepositStatus, PaymentStatus } from "@/lib/types/database";
+import type { ConversationStatus } from "@/lib/types/inbox";
 
 function BaseBadge({
   label,
@@ -53,5 +55,14 @@ export function EquipmentStatusBadge({
   status: EquipmentDisplayStatus;
 }) {
   const style = EQUIPMENT_STATUS[status];
+  return <BaseBadge label={style.label} className={style.className} />;
+}
+
+export function ConversationStatusBadge({
+  status,
+}: {
+  status: ConversationStatus;
+}) {
+  const style = CONVERSATION_STATUS[status];
   return <BaseBadge label={style.label} className={style.className} />;
 }

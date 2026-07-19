@@ -1,6 +1,7 @@
 import {
   Calendar,
   CalendarCheck,
+  Inbox,
   LayoutDashboard,
   Package,
   Settings,
@@ -17,6 +18,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/inbox", label: "Boîte de réception", icon: Inbox },
   { href: "/bookings", label: "Réservations", icon: CalendarCheck },
   { href: "/calendar", label: "Calendrier", icon: Calendar },
   { href: "/equipment", label: "Matériel", icon: Package },

@@ -8,6 +8,7 @@ import type {
   EquipmentStatus,
   PaymentStatus,
 } from "@/lib/types/database";
+import type { ChannelKind, ConversationStatus } from "@/lib/types/inbox";
 
 // « en retard » est un état dérivé (in_progress avec retour dépassé).
 export type DerivedBookingStatus = BookingStatus | "late";
@@ -124,6 +125,36 @@ export const EQUIPMENT_STATUS: Record<EquipmentDisplayStatus, BadgeStyle> = {
     label: "Archivé",
     className: "bg-muted text-muted-foreground/70 border-border",
   },
+};
+
+export const CONVERSATION_STATUS: Record<ConversationStatus, BadgeStyle> = {
+  new: {
+    label: "Nouveau",
+    className: "bg-cyan-50 text-cyan-800 border-cyan-200",
+  },
+  auto_replied: {
+    label: "Répondu auto",
+    className: "bg-violet-50 text-violet-800 border-violet-200",
+  },
+  replied: {
+    label: "Répondu",
+    className: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  },
+  transferred: {
+    label: "Transféré",
+    className: "bg-amber-50 text-amber-800 border-amber-200",
+  },
+  ignored: {
+    label: "Ignoré",
+    className: "bg-muted text-muted-foreground/70 border-border",
+  },
+};
+
+export const CHANNEL_LABELS: Record<ChannelKind, string> = {
+  messenger: "Messenger",
+  gmail: "Gmail",
+  whatsapp: "WhatsApp",
+  form: "Formulaire",
 };
 
 export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
