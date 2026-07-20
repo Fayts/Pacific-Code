@@ -83,7 +83,7 @@ export function BookingDetailClient({ id }: { id: string }) {
           <Skeleton className="h-8 w-64" />
         </div>
         <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
-          <div className="space-y-4 lg:col-span-2">
+          <div className="min-w-0 space-y-4 lg:col-span-2">
             <Skeleton className="h-56 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
           </div>
@@ -145,7 +145,7 @@ export function BookingDetailClient({ id }: { id: string }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
-        <div className="space-y-4 lg:col-span-2">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           {/* Matériels */}
           <Card>
             <CardHeader>

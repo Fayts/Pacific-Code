@@ -213,7 +213,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Historique des réservations */}
-        <div className="lg:col-span-2">
+        <div className="min-w-0 lg:col-span-2">
           <h2 className="mb-3 text-sm font-semibold text-foreground">
             Historique des réservations
           </h2>
