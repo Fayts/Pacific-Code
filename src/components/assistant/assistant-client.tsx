@@ -3,8 +3,11 @@
 // Page Assistant : attend l'organisation (couche de données mock) puis
 // affiche le chat en mode démonstration.
 
+import Link from "next/link";
+import { Plug } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssistantChat } from "@/components/assistant/chat";
 
@@ -26,6 +29,12 @@ export function AssistantClient() {
       <PageHeader
         title="Assistant IA"
         description="Mode démonstration : réponses simulées, calculées sur les données de votre espace."
+        actions={
+          <Button variant="outline" render={<Link href="/assistant/connections" />}>
+            <Plug className="size-4" aria-hidden />
+            Connexions
+          </Button>
+        }
       />
       <AssistantChat organization={organization} />
     </div>

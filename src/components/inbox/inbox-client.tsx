@@ -136,7 +136,7 @@ export function InboxClient() {
         title="Boîte de réception"
         description="Toutes vos demandes — Messenger, Gmail, WhatsApp, formulaire — traitées par votre agent IA."
         actions={
-          <Button variant="outline" render={<Link href="/assistant" />}>
+          <Button variant="outline" render={<Link href="/assistant/connections" />}>
             <Plug className="size-4" aria-hidden />
             Canaux et réglages
           </Button>
