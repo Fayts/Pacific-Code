@@ -149,7 +149,20 @@ export async function POST(request: NextRequest) {
   try {
     const result = await generateText({
       model: provider.model,
-      system: `${SYSTEM_PROMPT}\n\n${context}`,
+      // Deux blocs system : le prompt + les définitions d'outils (statiques)
+      // portent un point de cache Anthropic — refacturés ~10 % après le
+      // premier tour — tandis que le contexte changeant (brouillon,
+      // complétude) reste hors cache. Ignoré par les autres fournisseurs.
+      instructions: [
+        {
+          role: "system" as const,
+          content: SYSTEM_PROMPT,
+          providerOptions: {
+            anthropic: { cacheControl: { type: "ephemeral" } },
+          },
+        },
+        { role: "system" as const, content: context },
+      ],
       messages: [
         ...history.map((entry) => ({
           role: entry.role,
@@ -161,6 +174,16 @@ export async function POST(request: NextRequest) {
       stopWhen: stepCountIs(8),
       abortSignal: AbortSignal.timeout(50_000),
     });
+
+    // Journal de consommation : uniquement des compteurs, jamais de contenu.
+    console.log(
+      "[onboarding/agent] usage :",
+      JSON.stringify({
+        provider: provider.provider,
+        steps: result.steps.length,
+        usage: result.usage,
+      })
+    );
 
     const reply =
       result.text.trim() ||
@@ -176,14 +199,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     // Journal technique sans contenu utilisateur.
-    console.error(
-      "[onboarding/agent] échec LLM :",
-      error instanceof Error ? error.message : "erreur inconnue"
-    );
+    const detail = error instanceof Error ? error.message : "erreur inconnue";
+    console.error("[onboarding/agent] échec LLM :", detail);
+    const outOfCredit = detail.includes("credit balance");
     return NextResponse.json(
       {
-        error:
-          "L'agent n'a pas pu répondre — vos données sont intactes, réessayez.",
+        error: outOfCredit
+          ? "Le compte IA de la plateforme n'a plus de crédit — vos données sont intactes. Prévenez l'administrateur."
+          : "L'agent n'a pas pu répondre — vos données sont intactes, réessayez.",
       },
       { status: 502 }
     );
