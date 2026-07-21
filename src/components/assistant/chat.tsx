@@ -1,10 +1,11 @@
 "use client";
 
-// Chat de l'assistant en mode démonstration : le moteur tourne
-// entièrement côté client sur la couche de données mock — aucun appel
-// réseau. La conversation vit en mémoire (non persistée en mode démo).
-// La connexion à un vrai modèle (Claude, OpenAI, Gemini) remplacera la
-// fonction `respond` sans toucher au reste de l'interface.
+// Chat de l'assistant. Deux moteurs derrière la même interface :
+// - LLM réel via la route /api/assistant/chat (mode supabase + clé IA
+//   configurée côté serveur) — outils bornés, RLS, propositions à
+//   confirmer ;
+// - moteur déterministe local (mode mock, ou repli sans clé IA).
+// La conversation vit en mémoire (non persistée).
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -58,6 +59,10 @@ export function AssistantChat({ organization }: { organization: Organization }) 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  // "unknown" tant que la route serveur n'a pas répondu ; "demo" = repli local.
+  const [serverAi, setServerAi] = useState<"unknown" | "llm" | "demo">(
+    provider.kind === "supabase" ? "unknown" : "demo"
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const toolkit = useMemo(
@@ -69,6 +74,51 @@ export function AssistantChat({ organization }: { organization: Organization }) 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pending]);
 
+  /** Tente la route LLM serveur ; renvoie false s'il faut le repli local. */
+  async function sendToServer(trimmed: string): Promise<boolean> {
+    if (
+      provider.kind !== "supabase" ||
+      serverAi === "demo" ||
+      !provider.getAccessToken
+    ) {
+      return false;
+    }
+    const token = await provider.getAccessToken();
+    if (!token) return false;
+
+    const response = await fetch("/api/assistant/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        message: trimmed,
+        history: messages
+          .slice(-12)
+          .map((m) => ({ role: m.role, content: m.content })),
+      }),
+    });
+    const data = (await response.json()) as
+      | { mode: "demo" }
+      | { mode: "llm"; text: string; proposals?: AssistantProposal[] }
+      | { error: string };
+
+    if ("mode" in data && data.mode === "demo") {
+      setServerAi("demo");
+      return false;
+    }
+    if (!response.ok || "error" in data) {
+      throw new Error("error" in data ? data.error : "Erreur serveur");
+    }
+    setServerAi("llm");
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: data.text, proposals: data.proposals ?? [] },
+    ]);
+    return true;
+  }
+
   async function send(message: string) {
     const trimmed = message.trim();
     if (!trimmed || pending) return;
@@ -78,6 +128,8 @@ export function AssistantChat({ organization }: { organization: Organization }) 
     setPending(true);
 
     try {
+      if (await sendToServer(trimmed)) return;
+
       const [result] = await Promise.all([
         runDemoAssistant({ organization }, toolkit, trimmed),
         new Promise((resolve) => setTimeout(resolve, THINKING_DELAY_MS)),
@@ -90,8 +142,10 @@ export function AssistantChat({ organization }: { organization: Organization }) 
           proposals: result.proposals,
         },
       ]);
-    } catch {
-      toast.error("L'assistant n'a pas pu répondre. Réessayez.");
+    } catch (err) {
+      const detail =
+        err instanceof Error && err.message ? ` (${err.message})` : "";
+      toast.error(`L'assistant n'a pas pu répondre.${detail}`);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "⚠️ Une erreur est survenue. Réessayez." },
@@ -110,7 +164,11 @@ export function AssistantChat({ organization }: { organization: Organization }) 
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <span className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Sparkles className="size-4 text-primary" aria-hidden />
-          Assistant (mode démo)
+          {serverAi === "llm"
+            ? "Assistant IA"
+            : serverAi === "demo"
+              ? "Assistant (mode démo)"
+              : "Assistant"}
         </span>
         <Button
           variant="ghost"

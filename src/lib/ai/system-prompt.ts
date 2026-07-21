@@ -1,7 +1,13 @@
-import type { OrgContext } from "@/lib/auth/context";
 import { toLocalDateTimeInput } from "@/lib/core/dates";
 
-export function buildSystemPrompt(context: OrgContext, now: Date = new Date()): string {
+export type SystemPromptContext = {
+  organization: { name: string; timezone: string; currency: string };
+};
+
+export function buildSystemPrompt(
+  context: SystemPromptContext,
+  now: Date = new Date()
+): string {
   const org = context.organization;
   const localNow = toLocalDateTimeInput(now, org.timezone);
 

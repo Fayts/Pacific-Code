@@ -241,6 +241,11 @@ export interface DataProvider {
   agentSettings: AgentSettingsRepository;
   /** Réabonne l'UI aux changements de données (retourne un désabonnement). */
   subscribe(listener: () => void): () => void;
+  /**
+   * Jeton d'accès de l'utilisateur (mode supabase uniquement) — permet aux
+   * routes API serveur (assistant LLM…) d'agir en son nom sous RLS.
+   */
+  getAccessToken?(): Promise<string | null>;
   /** Restaure le jeu de données de démonstration. */
   resetDemoData(): Promise<void>;
 }

@@ -6,8 +6,8 @@
 
 import { z } from "zod";
 import { tool } from "ai";
-import { createClient } from "@/lib/supabase/server";
-import type { OrgContext } from "@/lib/auth/context";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/types/database";
 import { parseLocalDateTimeInput, toLocalDateTimeInput } from "@/lib/core/dates";
 import { sanitizeSearchTerm } from "@/lib/core/search";
 import {
@@ -108,11 +108,23 @@ const proposeEquipmentStatusInput = z.object({
 
 export type AssistantToolkit = Awaited<ReturnType<typeof createAssistantToolkit>>;
 
-export async function createAssistantToolkit(context: OrgContext) {
-  const supabase = await createClient();
-  const orgId = context.organization.id;
-  const timezone = context.organization.timezone;
-  const currency = context.organization.currency;
+export type AssistantToolkitContext = {
+  organizationId: string;
+  timezone: string;
+  currency: string;
+};
+
+/**
+ * Le client Supabase injecté doit être AUTHENTIFIÉ au nom de l'utilisateur
+ * (jeton Bearer) : la RLS garantit alors l'isolation multi-tenant.
+ */
+export async function createAssistantToolkit(
+  supabase: SupabaseClient<Database>,
+  context: AssistantToolkitContext
+) {
+  const orgId = context.organizationId;
+  const timezone = context.timezone;
+  const currency = context.currency;
 
   const executors = {
     async searchEquipment(input: z.infer<typeof searchEquipmentInput>) {
@@ -169,26 +181,52 @@ export async function createAssistantToolkit(context: OrgContext) {
     },
 
     async searchCustomers(input: z.infer<typeof searchCustomersInput>) {
-      const term = sanitizeSearchTerm(input.query);
-      if (!term) return [];
+      // « Jean Dupont » doit trouver prénom=Jean + nom=Dupont : la recherche
+      // se fait terme par terme, chaque terme devant correspondre à au moins
+      // un champ (les colonnes séparées ne contiennent jamais le nom complet).
+      const terms = input.query
+        .split(/\s+/)
+        .map((t) => sanitizeSearchTerm(t))
+        .filter((t) => t.length > 0);
+      if (terms.length === 0) return [];
+
+      const columns = ["first_name", "last_name", "company_name", "email", "phone"];
+      const orExpression = terms
+        .flatMap((t) => columns.map((col) => `${col}.ilike.%${t}%`))
+        .join(",");
       const { data, error } = await supabase
         .from("customers")
         .select("id, type, first_name, last_name, company_name, email, phone")
         .eq("organization_id", orgId)
         .is("archived_at", null)
-        .or(
-          `first_name.ilike.%${term}%,last_name.ilike.%${term}%,company_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`
-        )
+        .or(orExpression)
         .order("last_name")
-        .limit(15);
+        .limit(30);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((c) => ({
-        id: c.id,
-        name: formatCustomerName(c),
-        type: c.type,
-        email: c.email,
-        phone: c.phone,
-      }));
+
+      const matchesAllTerms = (c: {
+        first_name: string;
+        last_name: string;
+        company_name: string | null;
+        email: string | null;
+        phone: string | null;
+      }) =>
+        terms.every((t) =>
+          [c.first_name, c.last_name, c.company_name, c.email, c.phone]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(t.toLowerCase()))
+        );
+
+      return (data ?? [])
+        .filter(matchesAllTerms)
+        .slice(0, 15)
+        .map((c) => ({
+          id: c.id,
+          name: formatCustomerName(c),
+          type: c.type,
+          email: c.email,
+          phone: c.phone,
+        }));
     },
 
     async listBookings(input: z.infer<typeof listBookingsInput>) {

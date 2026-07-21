@@ -124,6 +124,11 @@ export class SupabaseDataProvider implements DataProvider {
     return () => this.listeners.delete(listener);
   }
 
+  async getAccessToken(): Promise<string | null> {
+    const { data } = await this.client.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+
   async resetDemoData(): Promise<void> {
     throw new Error(
       "La réinitialisation n'existe qu'en mode démonstration — ici, vos données sont réelles."
