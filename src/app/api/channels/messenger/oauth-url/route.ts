@@ -17,7 +17,10 @@ const requestSchema = z.object({
   redirectUri: z.string().url().max(500),
 });
 
-const OAUTH_SCOPES = "pages_show_list,pages_messaging,pages_manage_metadata";
+// pages_read_engagement est requis par Meta pour lire l'objet Page et
+// obtenir son jeton (constaté en production : (#100) sans ce scope).
+const OAUTH_SCOPES =
+  "pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement";
 
 export async function POST(request: NextRequest) {
   if (!messengerConfigured()) {
@@ -74,6 +77,8 @@ export async function POST(request: NextRequest) {
     params.set("config_id", configId);
   } else {
     params.set("scope", OAUTH_SCOPES);
+    // Redemande les autorisations ajoutées depuis un précédent accord.
+    params.set("auth_type", "rerequest");
   }
 
   return NextResponse.json({
