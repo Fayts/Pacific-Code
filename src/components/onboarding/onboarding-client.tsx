@@ -98,6 +98,8 @@ export function OnboardingClient() {
     }
   }, [session, phase]);
 
+  const [agentHint, setAgentHint] = useState<"attach" | null>(null);
+
   const startMethod = (source: ImportSource) => {
     setSession(createSession(source));
     setResumable(null);
@@ -286,7 +288,18 @@ export function OnboardingClient() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: EASE }}
         >
-          {phase === "method" && <MethodSelector onSelect={startMethod} />}
+          {phase === "method" && (
+            <MethodSelector
+              onSelect={(method) => {
+                setAgentHint(null);
+                startMethod(method);
+              }}
+              onSelectBrochure={() => {
+                setAgentHint("attach");
+                startMethod("assistant");
+              }}
+            />
+          )}
 
           {phase === "input" && session?.source === "text" && (
             <PasteImportStep
@@ -311,6 +324,7 @@ export function OnboardingClient() {
                 goToReview((base) => applyDraftToSession(draft, base))
               }
               onUseTextMethod={() => startMethod("text")}
+              initialHint={agentHint ?? undefined}
             />
           )}
           {phase === "input" && session?.source === "express" && (

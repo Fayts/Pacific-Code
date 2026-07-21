@@ -67,8 +67,11 @@ const METHODS: Array<{
 
 export function MethodSelector({
   onSelect,
+  onSelectBrochure,
 }: {
   onSelect: (method: MethodId) => void;
+  /** Brochure PDF / photo de tarifs : ouvre l'agent IA orienté document. */
+  onSelectBrochure: () => void;
 }) {
   return (
     <div>
@@ -119,27 +122,38 @@ export function MethodSelector({
           );
         })}
 
-        {/* PDF : architecture prête, analyse branchée plus tard. */}
-        <motion.div
+        {/* Brochure / photo : analysée par l'agent IA (blocs image + PDF). */}
+        <motion.button
+          type="button"
+          onClick={onSelectBrochure}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.25 }}
-          className="flex flex-col rounded-2xl border border-dashed border-pc-lagoon/25 bg-card/60 p-6"
+          className={cn(
+            "group flex flex-col rounded-2xl bg-card p-6 text-left shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08]",
+            "transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-pc-deep/10 hover:ring-primary/30",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          )}
         >
-          <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-            <FileText className="size-5" aria-hidden />
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-pc-lagoon to-pc-turquoise text-white shadow-lg shadow-pc-lagoon/25 transition duration-300 group-hover:scale-110">
+              <FileText className="size-5" aria-hidden />
+            </span>
+            <span className="rounded-full bg-pc-turquoise/10 px-2.5 py-0.5 text-xs font-medium text-pc-lagoon ring-1 ring-pc-turquoise/30">
+              Nouveau
+            </span>
+          </div>
           <h3 className="mt-4 font-semibold text-foreground">
-            J’ai une brochure PDF
+            J’ai une brochure ou une photo de mes tarifs
           </h3>
           <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">
-            Analyse avancée prochainement disponible. En attendant, copiez le
-            texte de votre brochure dans « Je colle mes annonces ».
+            Joignez un PDF ou photographiez votre grille tarifaire : l’agent IA
+            en extrait vos biens et vos prix.
           </p>
-          <span className="mt-4 text-sm font-medium text-muted-foreground/70">
-            Bientôt disponible
+          <span className="mt-4 text-sm font-semibold text-primary transition group-hover:translate-x-0.5">
+            Analyser mon document →
           </span>
-        </motion.div>
+        </motion.button>
       </div>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

@@ -10,10 +10,17 @@ import {
   type OnboardingDraft,
 } from "@/lib/agent/draft";
 
+export type AgentMessageAttachment = {
+  kind: "image" | "pdf";
+  name: string;
+};
+
 export type AgentMessage = {
   role: "user" | "assistant";
   text: string;
   at: string;
+  /** Métadonnées d'affichage — le contenu des fichiers n'est jamais stocké. */
+  attachments?: AgentMessageAttachment[];
 };
 
 export type AgentConversation = {

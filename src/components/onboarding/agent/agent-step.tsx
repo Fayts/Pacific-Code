@@ -9,13 +9,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
+  Camera,
+  FileText,
   KeyRound,
   ListChecks,
   MessageCircle,
+  Paperclip,
   RotateCcw,
   Send,
   Sparkles,
   Undo2,
+  X,
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -37,6 +41,11 @@ import {
   saveConversation,
   type AgentMessage,
 } from "@/lib/agent/store";
+import {
+  MAX_ATTACHMENTS,
+  prepareAttachment,
+  type PreparedAttachment,
+} from "@/lib/agent/attachments";
 import { DraftPanel } from "@/components/onboarding/agent/draft-panel";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -44,7 +53,14 @@ const HISTORY_LIMIT = 10;
 const UNDO_LIMIT = 15;
 
 const GREETING =
-  "Bonjour 👋 Je vais construire votre activité avec vous. Décrivez simplement ce que vous louez, avec vos mots — vous pouvez indiquer les biens, les quantités et les prix si vous les connaissez. Vous pouvez aussi coller une annonce ou votre catalogue.";
+  "Bonjour 👋 Je vais construire votre activité avec vous. Décrivez simplement ce que vous louez, avec vos mots — vous pouvez aussi coller une annonce, ou joindre une photo de vos tarifs ou une brochure PDF avec le trombone ci-dessous.";
+
+const ATTACH_GREETING =
+  "Bonjour 👋 Joignez votre brochure PDF ou une photo de votre grille tarifaire avec le trombone ci-dessous — j’en extrais vos biens et vos tarifs, puis nous complétons ensemble.";
+
+/** Message envoyé au serveur quand on joint un fichier sans texte. */
+const ATTACH_ONLY_MESSAGE =
+  "Analysez le ou les documents joints et construisez mon activité.";
 
 const SUGGESTIONS = [
   "Je loue du matériel",
@@ -65,7 +81,7 @@ type AgentResponse = {
   error?: string;
 };
 
-function ThinkingIndicator() {
+function ThinkingIndicator({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <span className="flex items-center gap-1" aria-hidden>
@@ -83,17 +99,30 @@ function ThinkingIndicator() {
           />
         ))}
       </span>
-      L’agent réfléchit…
+      {label}
     </div>
+  );
+}
+
+function AttachmentChip({ kind, name }: { kind: "image" | "pdf"; name: string }) {
+  const Icon = kind === "pdf" ? FileText : Camera;
+  return (
+    <span className="flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-xs font-medium">
+      <Icon className="size-3.5 shrink-0" aria-hidden />
+      <span className="max-w-44 truncate">{name}</span>
+    </span>
   );
 }
 
 export function AgentStep({
   onReview,
   onUseTextMethod,
+  initialHint,
 }: {
   onReview: (draft: OnboardingDraft) => void;
   onUseTextMethod: () => void;
+  /** « attach » : accueil orienté brochure/photo (carte PDF du sélecteur). */
+  initialHint?: "attach";
 }) {
   const { session } = useAppData();
   const reduce = useReducedMotion();
@@ -104,8 +133,13 @@ export function AgentStep({
   const [draft, setDraft] = useState<OnboardingDraft>(emptyDraft());
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<PreparedAttachment[]>([]);
+  const [analyzingDoc, setAnalyzingDoc] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFailed, setLastFailed] = useState<string | null>(null);
+  const [lastFailed, setLastFailed] = useState<{
+    text: string;
+    attachments: PreparedAttachment[];
+  } | null>(null);
   const [agentMode, setAgentMode] = useState<AgentMode>(null);
   const [reviewProposed, setReviewProposed] = useState(false);
   const [reviewDismissed, setReviewDismissed] = useState(false);
@@ -117,6 +151,7 @@ export function AgentStep({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reprise de conversation (par utilisateur).
   useEffect(() => {
@@ -130,7 +165,11 @@ export function AgentStep({
         setDraft(stored.draft);
       } else {
         setMessages([
-          { role: "assistant", text: GREETING, at: new Date().toISOString() },
+          {
+            role: "assistant",
+            text: initialHint === "attach" ? ATTACH_GREETING : GREETING,
+            at: new Date().toISOString(),
+          },
         ]);
       }
       setLoaded(true);
@@ -138,7 +177,7 @@ export function AgentStep({
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, initialHint]);
 
   // Défilement intelligent : suit la conversation seulement si on est
   // déjà proche du bas (on ne vole pas la lecture de l'historique).
@@ -190,33 +229,54 @@ export function AgentStep({
   );
 
   const send = useCallback(
-    async (rawText: string, options?: { retryOf?: string }) => {
-      const text = rawText.trim();
-      if (!text || busy || !loaded) return;
+    async (
+      rawText: string,
+      options?: {
+        retry?: { text: string; attachments: PreparedAttachment[] };
+      }
+    ) => {
+      const pending = options?.retry?.attachments ?? attachments;
+      const text = (options?.retry?.text ?? rawText).trim();
+      if ((!text && pending.length === 0) || busy || !loaded) return;
       setError(null);
       setLastFailed(null);
       setBusy(true);
+      setAnalyzingDoc(pending.length > 0);
 
       const history = messages.slice(-HISTORY_LIMIT).map((m) => ({
         role: m.role,
         text: m.text,
       }));
-      const withUser: AgentMessage[] = options?.retryOf
+      const withUser: AgentMessage[] = options?.retry
         ? messages
         : [
             ...messages,
-            { role: "user", text, at: new Date().toISOString() },
+            {
+              role: "user",
+              text,
+              at: new Date().toISOString(),
+              attachments:
+                pending.length > 0
+                  ? pending.map((a) => ({ kind: a.kind, name: a.name }))
+                  : undefined,
+            },
           ];
-      if (!options?.retryOf) {
+      if (!options?.retry) {
         setMessages(withUser);
         setInput("");
+        setAttachments([]);
       }
 
       try {
         const response = await fetch("/api/onboarding/agent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, draft, history }),
+          body: JSON.stringify({
+            message: text || ATTACH_ONLY_MESSAGE,
+            draft,
+            history,
+            attachments: pending.length > 0 ? pending : undefined,
+          }),
         });
         const payload = (await response.json()) as AgentResponse;
 
@@ -258,12 +318,42 @@ export function AgentStep({
             ? fetchError.message
             : "L’agent n’a pas pu répondre."
         );
-        setLastFailed(text);
+        setLastFailed({ text, attachments: pending });
       } finally {
         setBusy(false);
+        setAnalyzingDoc(false);
       }
     },
-    [busy, loaded, messages, draft, persist, pushUndo, tab]
+    [attachments, busy, loaded, messages, draft, persist, pushUndo, tab]
+  );
+
+  const addFiles = useCallback(
+    async (list: FileList | null) => {
+      if (!list || list.length === 0) return;
+      setError(null);
+      const files = Array.from(list);
+      const room = MAX_ATTACHMENTS - attachments.length;
+      if (files.length > room) {
+        setError(`Maximum ${MAX_ATTACHMENTS} pièces jointes par message.`);
+      }
+      for (const file of files.slice(0, Math.max(0, room))) {
+        try {
+          const prepared = await prepareAttachment(file);
+          setAttachments((current) =>
+            current.length >= MAX_ATTACHMENTS
+              ? current
+              : [...current, prepared]
+          );
+        } catch (prepError) {
+          setError(
+            prepError instanceof Error
+              ? prepError.message
+              : "Fichier illisible."
+          );
+        }
+      }
+    },
+    [attachments.length]
   );
 
   const undo = useCallback(() => {
@@ -497,12 +587,36 @@ export function AgentStep({
                         : "rounded-bl-md bg-background text-foreground ring-1 ring-pc-deep/[0.08]"
                     )}
                   >
+                    {message.attachments && message.attachments.length > 0 && (
+                      <span
+                        className={cn(
+                          "flex flex-wrap gap-1.5",
+                          message.text && "mb-1.5"
+                        )}
+                      >
+                        {message.attachments.map((attachment, j) => (
+                          <AttachmentChip
+                            key={`${attachment.name}-${j}`}
+                            kind={attachment.kind}
+                            name={attachment.name}
+                          />
+                        ))}
+                      </span>
+                    )}
                     {message.text}
                   </div>
                 </motion.div>
               ))}
 
-              {busy && <ThinkingIndicator />}
+              {busy && (
+                <ThinkingIndicator
+                  label={
+                    analyzingDoc
+                      ? "L’agent analyse votre document…"
+                      : "L’agent réfléchit…"
+                  }
+                />
+              )}
 
               {error && (
                 <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-2.5 text-sm text-rose-700">
@@ -512,9 +626,7 @@ export function AgentStep({
                     {lastFailed && (
                       <button
                         type="button"
-                        onClick={() =>
-                          void send(lastFailed, { retryOf: lastFailed })
-                        }
+                        onClick={() => void send("", { retry: lastFailed })}
                         className="mt-1 text-xs font-semibold underline underline-offset-2"
                       >
                         Réessayer
@@ -600,9 +712,72 @@ export function AgentStep({
                         {suggestion}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 rounded-full border border-pc-lagoon/25 bg-pc-turquoise/[0.06] px-3 py-1.5 text-xs font-medium text-pc-lagoon transition hover:bg-pc-turquoise/15"
+                    >
+                      <Paperclip className="size-3.5" aria-hidden />
+                      J’envoie une photo ou un PDF
+                    </button>
+                  </div>
+                )}
+                {attachments.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1.5 px-1">
+                    {attachments.map((attachment, i) => {
+                      const Icon =
+                        attachment.kind === "pdf" ? FileText : Camera;
+                      return (
+                        <span
+                          key={`${attachment.name}-${i}`}
+                          className="flex items-center gap-1.5 rounded-full border border-pc-lagoon/25 bg-pc-turquoise/[0.08] py-1 pl-2.5 pr-1.5 text-xs font-medium text-pc-lagoon"
+                        >
+                          <Icon className="size-3.5 shrink-0" aria-hidden />
+                          <span className="max-w-40 truncate">
+                            {attachment.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttachments((current) =>
+                                current.filter((_, j) => j !== i)
+                              )
+                            }
+                            className="rounded-full p-0.5 transition hover:bg-pc-turquoise/20"
+                            aria-label={`Retirer ${attachment.name}`}
+                          >
+                            <X className="size-3" aria-hidden />
+                          </button>
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
                 <div className="flex items-end gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void addFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={
+                      busy || !loaded || attachments.length >= MAX_ATTACHMENTS
+                    }
+                    className="text-muted-foreground"
+                    aria-label="Joindre une photo ou un PDF"
+                  >
+                    <Paperclip className="size-4.5" aria-hidden />
+                  </Button>
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -614,7 +789,7 @@ export function AgentStep({
                     }}
                     rows={2}
                     maxLength={12_000}
-                    placeholder="Décrivez votre activité, ou collez une annonce / votre catalogue…"
+                    placeholder="Décrivez votre activité, collez une annonce, ou joignez une photo / un PDF…"
                     className="max-h-40 flex-1 resize-none bg-card"
                     aria-label="Votre message"
                     disabled={busy || !loaded}
@@ -623,7 +798,11 @@ export function AgentStep({
                     type="button"
                     size="icon-lg"
                     onClick={() => void send(input)}
-                    disabled={busy || !input.trim() || !loaded}
+                    disabled={
+                      busy ||
+                      (!input.trim() && attachments.length === 0) ||
+                      !loaded
+                    }
                     className="bg-gradient-to-br from-pc-lagoon to-pc-turquoise text-white shadow-lg shadow-pc-lagoon/25 hover:brightness-105"
                     aria-label="Envoyer"
                   >
