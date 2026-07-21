@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   exchangeCodeForUserToken,
   listGrantedPermissions,
+  listPagesViaGrantedScopes,
   listUserPages,
   messengerConfigured,
   subscribePageToWebhooks,
@@ -84,7 +85,12 @@ export async function POST(request: NextRequest) {
       parsed.data.code,
       parsed.data.redirectUri
     );
-    const pages = await listUserPages(userToken);
+    let pages = await listUserPages(userToken);
+    if (pages.length === 0) {
+      // Page détenue par un portefeuille business : /me/accounts peut être
+      // vide malgré l'accord — repli sur les granular scopes du jeton.
+      pages = await listPagesViaGrantedScopes(userToken);
+    }
     if (pages.length === 0) {
       // Diagnostic : quelles autorisations Facebook a-t-il réellement accordées ?
       const granted = await listGrantedPermissions(userToken);

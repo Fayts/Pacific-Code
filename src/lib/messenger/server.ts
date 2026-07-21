@@ -131,6 +131,58 @@ export async function listUserPages(userToken: string): Promise<MessengerPage[]>
   return result.data ?? [];
 }
 
+/**
+ * Pages accordées via les « granular scopes » du jeton — la voie fiable
+ * quand la Page appartient à un portefeuille business : /me/accounts peut
+ * renvoyer une liste vide alors que l'accès à la Page a bien été accordé.
+ */
+export async function listPagesViaGrantedScopes(
+  userToken: string
+): Promise<MessengerPage[]> {
+  const appToken = `${facebookAppId()}|${facebookAppSecret()}`;
+  const debug = await graph<{
+    data?: {
+      granular_scopes?: Array<{ scope: string; target_ids?: string[] }>;
+    };
+  }>(
+    `/debug_token?input_token=${encodeURIComponent(userToken)}&access_token=${encodeURIComponent(appToken)}`
+  );
+
+  const pageIds = new Set<string>();
+  for (const granular of debug.data?.granular_scopes ?? []) {
+    if (
+      ["pages_messaging", "pages_show_list", "pages_manage_metadata"].includes(
+        granular.scope
+      )
+    ) {
+      for (const id of granular.target_ids ?? []) pageIds.add(id);
+    }
+  }
+
+  const pages: MessengerPage[] = [];
+  for (const id of pageIds) {
+    try {
+      const page = await graph<{
+        id: string;
+        name: string;
+        access_token?: string;
+      }>(
+        `/${id}?fields=id,name,access_token&access_token=${encodeURIComponent(userToken)}`
+      );
+      if (page.access_token) {
+        pages.push({
+          id: page.id,
+          name: page.name,
+          access_token: page.access_token,
+        });
+      }
+    } catch {
+      // Page inaccessible : ignorée, les autres candidates restent tentées.
+    }
+  }
+  return pages;
+}
+
 /** Diagnostic : autorisations réellement accordées par l'utilisateur. */
 export async function listGrantedPermissions(
   userToken: string
