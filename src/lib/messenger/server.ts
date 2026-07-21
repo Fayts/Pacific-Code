@@ -128,6 +128,9 @@ export async function listUserPages(userToken: string): Promise<MessengerPage[]>
   const result = await graph<{ data: MessengerPage[] }>(
     `/me/accounts?fields=id,name,access_token&limit=25&access_token=${encodeURIComponent(userToken)}`
   );
+  console.error(
+    `[messenger] /me/accounts: ${result.data?.length ?? 0} page(s)`
+  );
   return result.data ?? [];
 }
 
@@ -146,6 +149,11 @@ export async function listPagesViaGrantedScopes(
     };
   }>(
     `/debug_token?input_token=${encodeURIComponent(userToken)}&access_token=${encodeURIComponent(appToken)}`
+  );
+
+  console.error(
+    "[messenger] debug_token granular_scopes:",
+    JSON.stringify(debug.data?.granular_scopes ?? null)
   );
 
   const pageIds = new Set<string>();
@@ -169,6 +177,9 @@ export async function listPagesViaGrantedScopes(
       }>(
         `/${id}?fields=id,name,access_token&access_token=${encodeURIComponent(userToken)}`
       );
+      console.error(
+        `[messenger] page ${id}: name=${page.name} token=${page.access_token ? "oui" : "NON"}`
+      );
       if (page.access_token) {
         pages.push({
           id: page.id,
@@ -176,8 +187,11 @@ export async function listPagesViaGrantedScopes(
           access_token: page.access_token,
         });
       }
-    } catch {
-      // Page inaccessible : ignorée, les autres candidates restent tentées.
+    } catch (err) {
+      console.error(
+        `[messenger] page ${id} inaccessible:`,
+        err instanceof Error ? err.message : err
+      );
     }
   }
   return pages;
