@@ -15,7 +15,7 @@ import { SettingsForm } from "@/app/(app)/settings/settings-form";
 import { DemoDataCard } from "@/components/settings/demo-data-card";
 
 export function SettingsClient() {
-  const { organization } = useAppData();
+  const { provider, organization } = useAppData();
   const guide = useGuide();
 
   if (!organization) {
@@ -49,10 +49,10 @@ export function SettingsClient() {
 
       <div className="space-y-6">
         <SettingsForm organization={organization} />
-        <DemoDataCard />
+        {provider.kind === "mock" && <DemoDataCard />}
         <p className="text-sm text-muted-foreground">
-          Version de démonstration : l&apos;ajout d&apos;un logo sera disponible
-          une fois le stockage en ligne connecté.
+          L&apos;ajout d&apos;un logo sera disponible une fois le stockage en
+          ligne connecté.
         </p>
       </div>
     </div>

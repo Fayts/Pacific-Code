@@ -59,13 +59,18 @@ export default function RegisterPage() {
       try {
         await provider.auth.signUp({
           email: values.email,
+          password: values.password,
           firstName: values.firstName,
           lastName: values.lastName,
           companyName: values.companyName,
           businessType: values.businessType,
         });
-      } catch {
-        toast.error("Création du compte impossible, réessayez.");
+      } catch (err) {
+        toast.error(
+          err instanceof Error && err.message
+            ? err.message
+            : "Création du compte impossible, réessayez."
+        );
         return;
       }
       toast.success(
@@ -88,12 +93,14 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
-          <strong>Version de démonstration</strong> — le compte est créé
-          instantanément sur cet appareil, sans email de confirmation. Votre
-          espace arrive pré-rempli de données fictives pour explorer
-          l&apos;application.
-        </p>
+        {provider.kind === "mock" && (
+          <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
+            <strong>Version de démonstration</strong> — le compte est créé
+            instantanément sur cet appareil, sans email de confirmation. Votre
+            espace arrive pré-rempli de données fictives pour explorer
+            l&apos;application.
+          </p>
+        )}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"

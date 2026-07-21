@@ -48,6 +48,8 @@ export type Session = { user: SessionUser } | null;
 
 export type SignUpInput = {
   email: string;
+  /** Ignoré en mode mock ; requis par l'authentification réelle. */
+  password: string;
   firstName: string;
   lastName: string;
   companyName: string;
@@ -115,7 +117,8 @@ export interface AuthRepository {
 }
 
 export interface OrganizationRepository {
-  get(): Promise<Organization>;
+  /** null = aucun utilisateur connecté (ou organisation pas encore créée). */
+  get(): Promise<Organization | null>;
   update(patch: Partial<Organization>): Promise<Organization>;
 }
 

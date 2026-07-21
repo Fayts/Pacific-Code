@@ -36,7 +36,7 @@ async function analyze(
     provider.inbox.getConversation(conversationId),
     provider.inbox.listMessages(conversationId),
   ]);
-  if (!conversation) throw new Error("conversation introuvable");
+  if (!conversation || !organization) throw new Error("données introuvables");
   return analyzeConversation(
     { conversation, messages },
     { provider, organization, settings, now: NOW }

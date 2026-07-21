@@ -41,8 +41,8 @@ describe("MockDataProvider — seed et persistance", () => {
     expect((await provider.equipment.list({ includeArchived: true })).length).toBe(4);
     expect((await provider.customers.list()).length).toBe(3);
     expect((await provider.bookings.list()).length).toBe(5);
-    expect((await provider.organization.get()).name).toBe("Pacific Rent&Clean");
-    expect((await provider.organization.get()).booking_prefix).toBe("PRC");
+    expect((await provider.organization.get())!.name).toBe("Pacific Rent&Clean");
+    expect((await provider.organization.get())!.booking_prefix).toBe("PRC");
   });
 
   it("persiste dans le stockage : un second provider relit les mêmes données", async () => {
@@ -99,14 +99,15 @@ describe("MockDataProvider — authentification simulée", () => {
     const provider = makeProvider();
     await provider.auth.signUp({
       email: "moi@boite.pf",
+      password: "peu-importe",
       firstName: "Heiva",
       lastName: "Nui",
       companyName: "Tahiti Loc",
       businessType: "vehicles",
     });
     const org = await provider.organization.get();
-    expect(org.name).toBe("Tahiti Loc");
-    expect(org.business_type).toBe("vehicles");
+    expect(org!.name).toBe("Tahiti Loc");
+    expect(org!.business_type).toBe("vehicles");
   });
 });
 

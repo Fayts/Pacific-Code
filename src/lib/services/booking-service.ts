@@ -58,6 +58,7 @@ async function prepare(
   excludeBookingId?: string | null
 ): Promise<ActionResult<PreparedBooking>> {
   const org = await provider.organization.get();
+  if (!org) return actionError("Aucune organisation active — reconnectez-vous.");
 
   let startAt: Date;
   let endAt: Date;
@@ -176,11 +177,17 @@ export async function createBooking(
     return actionError(unavailabilityMessage(prepared.data.unavailable));
   }
 
-  const booking = await provider.bookings.create(
-    prepared.data.draft,
-    prepared.data.pricing
-  );
-  return actionOk({ bookingId: booking.id });
+  try {
+    const booking = await provider.bookings.create(
+      prepared.data.draft,
+      prepared.data.pricing
+    );
+    return actionOk({ bookingId: booking.id });
+  } catch (err) {
+    // Course possible en mode réel : la disponibilité est revérifiée dans
+    // la transaction SQL, qui peut refuser malgré le contrôle ci-dessus.
+    return actionError(toUserMessage(err, "Création impossible, réessayez."));
+  }
 }
 
 export async function updateBooking(
@@ -208,13 +215,17 @@ export async function updateBooking(
     return actionError(unavailabilityMessage(prepared.data.unavailable));
   }
 
-  const updated = await provider.bookings.update(
-    bookingId,
-    { ...prepared.data.draft, status: existing.status as never },
-    prepared.data.pricing
-  );
-  if (!updated) return actionError("Réservation introuvable");
-  return actionOk(undefined);
+  try {
+    const updated = await provider.bookings.update(
+      bookingId,
+      { ...prepared.data.draft, status: existing.status as never },
+      prepared.data.pricing
+    );
+    if (!updated) return actionError("Réservation introuvable");
+    return actionOk(undefined);
+  } catch (err) {
+    return actionError(toUserMessage(err, "Modification impossible, réessayez."));
+  }
 }
 
 export async function changeBookingStatus(
@@ -295,6 +306,7 @@ export async function checkBookingAvailability(
   if (!parsed.success) return zodError(parsed.error);
 
   const org = await provider.organization.get();
+  if (!org) return actionError("Aucune organisation active — reconnectez-vous.");
   let startAt: Date;
   let endAt: Date;
   try {

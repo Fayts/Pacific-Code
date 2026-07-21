@@ -45,8 +45,12 @@ function LoginForm() {
     startTransition(async () => {
       try {
         await provider.auth.signIn(values.email, values.password);
-      } catch {
-        toast.error("Connexion impossible, réessayez.");
+      } catch (err) {
+        toast.error(
+          err instanceof Error && err.message
+            ? err.message
+            : "Connexion impossible, réessayez."
+        );
         return;
       }
       const next = searchParams.get("next");
@@ -69,11 +73,13 @@ function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
-          <strong>Version de démonstration</strong> — entrez n&apos;importe
-          quel email et mot de passe : aucune donnée réelle n&apos;est
-          utilisée.
-        </p>
+        {provider.kind === "mock" && (
+          <p className="mb-4 rounded-lg border border-cyan-200/70 bg-cyan-50/80 px-3 py-2 text-sm text-cyan-900">
+            <strong>Version de démonstration</strong> — entrez n&apos;importe
+            quel email et mot de passe : aucune donnée réelle n&apos;est
+            utilisée.
+          </p>
+        )}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"
