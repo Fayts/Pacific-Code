@@ -114,6 +114,10 @@ export interface AuthRepository {
   signIn(email: string, password: string): Promise<Session>;
   signUp(input: SignUpInput): Promise<Session>;
   signOut(): Promise<void>;
+  /** Envoie l'email de réinitialisation (mode supabase uniquement). */
+  requestPasswordReset?(email: string, redirectTo: string): Promise<void>;
+  /** Change le mot de passe de la session active (mode supabase uniquement). */
+  updatePassword?(newPassword: string): Promise<void>;
 }
 
 export interface OrganizationRepository {

@@ -88,6 +88,12 @@ function frenchAuthError(message: string): string {
   if (m.includes("password should be")) {
     return "Mot de passe trop court (6 caractères minimum).";
   }
+  if (m.includes("should be different from the old password")) {
+    return "Le nouveau mot de passe doit être différent de l'ancien.";
+  }
+  if (m.includes("rate limit") || m.includes("security purposes")) {
+    return "Trop de tentatives — patientez une minute puis réessayez.";
+  }
   return message;
 }
 
@@ -261,6 +267,24 @@ export class SupabaseDataProvider implements DataProvider {
     signOut: async (): Promise<void> => {
       await this.client.auth.signOut();
       this.context = null;
+    },
+
+    requestPasswordReset: async (
+      email: string,
+      redirectTo: string
+    ): Promise<void> => {
+      const { error } = await this.client.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo }
+      );
+      if (error) throw new Error(frenchAuthError(error.message));
+    },
+
+    updatePassword: async (newPassword: string): Promise<void> => {
+      const { error } = await this.client.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw new Error(frenchAuthError(error.message));
     },
   };
 
