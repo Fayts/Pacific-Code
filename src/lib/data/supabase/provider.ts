@@ -135,6 +135,31 @@ export class SupabaseDataProvider implements DataProvider {
     );
   }
 
+  /**
+   * Crée l'espace entreprise du compte connecté s'il n'existe pas encore,
+   * à partir des métadonnées enregistrées à l'inscription.
+   */
+  private async ensureOrganizationForUser(): Promise<void> {
+    if (await this.ensureContext()) return; // organisation déjà en place
+    const { data } = await this.client.auth.getSession();
+    const user = data.session?.user;
+    if (!user) return;
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const company = String(meta.company_name ?? "").trim();
+    if (!company) return; // rien d'automatisable sans nom d'entreprise
+    const businessTypes = ["equipment", "vehicles", "nautical", "events", "other"];
+    const businessType = businessTypes.includes(String(meta.business_type))
+      ? (String(meta.business_type) as Database["public"]["Enums"]["business_type"])
+      : "equipment";
+    await this.client.rpc("create_organization_with_owner", {
+      p_name: company,
+      p_business_type: businessType,
+      p_booking_prefix: derivePrefix(company),
+    });
+    this.context = null;
+    this.notify();
+  }
+
   /** Utilisateur + organisation courants (null si déconnecté / sans org). */
   private async ensureContext(): Promise<{ userId: string; orgId: string } | null> {
     if (this.context) return this.context;
@@ -179,6 +204,9 @@ export class SupabaseDataProvider implements DataProvider {
       });
       if (error) throw new Error(frenchAuthError(error.message));
       this.context = null;
+      // Compte confirmé par email APRÈS l'inscription : l'organisation n'a
+      // pas pu être créée au signUp (pas de session) — rattrapage ici.
+      await this.ensureOrganizationForUser();
       return this.auth.getSession();
     },
 

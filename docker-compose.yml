@@ -5,8 +5,11 @@ services:
     build:
       context: .
       args:
-        NEXT_PUBLIC_DATA_MODE: mock
+        # Mode réel : Supabase Cloud (org dédiée « Pacific Code »).
+        NEXT_PUBLIC_DATA_MODE: supabase
         NEXT_PUBLIC_SITE_URL: https://pacific-code.duckdns.org
+        NEXT_PUBLIC_SUPABASE_URL: https://bpzoluxnpkdrkmodderi.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_Vya9ifYhuN_joeCG8rWz8w__dByJasd
     image: pacific-code
     container_name: pacific-code
     # Clés IA (agent d'onboarding + assistant) : déclarées dans
