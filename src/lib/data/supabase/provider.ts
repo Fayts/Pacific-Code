@@ -225,9 +225,17 @@ export class SupabaseDataProvider implements DataProvider {
       });
       if (error) throw new Error(frenchAuthError(error.message));
       if (!data.session) {
-        throw new Error(
-          "Compte créé — confirmez votre adresse email (lien reçu par email), puis connectez-vous."
-        );
+        // Le serveur exige la confirmation d'email : avec l'auto-confirmation
+        // en base (mode pilote), la connexion immédiate aboutit quand même.
+        const { error: signInError } = await this.client.auth.signInWithPassword({
+          email: input.email.trim(),
+          password: input.password,
+        });
+        if (signInError) {
+          throw new Error(
+            "Compte créé — confirmez votre adresse email (lien reçu par email), puis connectez-vous."
+          );
+        }
       }
 
       // Crée l'organisation du nouveau compte (fonction SQL dédiée).
