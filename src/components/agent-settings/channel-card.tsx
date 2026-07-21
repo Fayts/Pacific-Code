@@ -52,8 +52,41 @@ export function ChannelCard({
 }) {
   const { provider } = useAppData();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const texts = CARD_TEXTS[channel];
   const connected = connection?.status === "connected";
+  const realMode = provider.kind === "supabase";
+
+  // Mode réel + Messenger : vrai parcours OAuth Facebook.
+  const startRealConnect = async () => {
+    setRedirecting(true);
+    try {
+      const token = await provider.getAccessToken?.();
+      if (!token) throw new Error("Reconnectez-vous puis réessayez.");
+      const response = await fetch("/api/channels/messenger/oauth-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          redirectUri: `${window.location.origin}/assistant/connections/messenger-callback`,
+        }),
+      });
+      const data = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !data.url) {
+        throw new Error(data.error ?? "Connexion Facebook indisponible.");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setRedirecting(false);
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : "Connexion Facebook impossible."
+      );
+    }
+  };
 
   return (
     <Card>
@@ -104,6 +137,14 @@ export function ChannelCard({
               }}
             />
           </div>
+        ) : realMode && channel === "messenger" ? (
+          <Button type="button" disabled={redirecting} onClick={startRealConnect}>
+            {redirecting ? "Redirection vers Facebook…" : texts.cta}
+          </Button>
+        ) : realMode ? (
+          <Button type="button" disabled variant="outline">
+            Bientôt disponible
+          </Button>
         ) : (
           <Button type="button" onClick={() => setDialogOpen(true)}>
             {texts.cta}

@@ -50,13 +50,55 @@ const settingsSchema = z.object({
   activated_at: z.string().nullable().optional(),
 });
 
-/** Envoi (simulé) d'une réponse sur le canal de la conversation. */
+/**
+ * Envoi d'une réponse sur le canal de la conversation.
+ * Messenger en mode réel : envoi effectif via la route serveur (jeton de
+ * Page côté serveur, trace ajoutée au fil). Autres cas : envoi simulé
+ * (message ajouté au fil uniquement).
+ */
 export async function sendReply(
   input: z.infer<typeof replySchema>,
   provider: DataProvider = getDataProvider()
 ): Promise<ActionResult<undefined>> {
   const parsed = replySchema.safeParse(input);
   if (!parsed.success) return zodError(parsed.error);
+
+  const conversation = await provider.inbox.getConversation(
+    parsed.data.conversationId
+  );
+  if (!conversation) return actionError("Conversation introuvable");
+
+  if (
+    provider.kind === "supabase" &&
+    conversation.channel === "messenger" &&
+    conversation.customer_contact?.startsWith("psid:") &&
+    provider.getAccessToken
+  ) {
+    const token = await provider.getAccessToken();
+    if (token) {
+      const response = await fetch("/api/channels/messenger/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(parsed.data),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) {
+        return actionError(data.error ?? "Envoi Messenger impossible");
+      }
+      // Les écritures ont eu lieu côté serveur : ce setStatus idempotent
+      // déclenche simplement le rafraîchissement de l'interface.
+      await provider.inbox.setStatus(
+        parsed.data.conversationId,
+        parsed.data.auto ? "auto_replied" : "replied"
+      );
+      return actionOk(undefined);
+    }
+  }
 
   const message = await provider.inbox.appendMessage(parsed.data.conversationId, {
     direction: "outbound",

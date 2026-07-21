@@ -62,6 +62,10 @@ const BLOCKING: BookingStatus[] = ["pending", "confirmed", "in_progress"];
 // générés : accès non typé, résultats castés vers les types de inbox.ts.
 type UntypedClient = SupabaseClient<Database> & {
   from(table: string): ReturnType<SupabaseClient["from"]>;
+  rpc(
+    fn: string,
+    args?: Record<string, unknown>
+  ): PromiseLike<{ data: unknown; error: { message: string } | null }>;
 };
 
 /** Préfixe de numérotation dérivé du nom d'entreprise (ex. « PRC »). */
@@ -919,6 +923,12 @@ export class SupabaseDataProvider implements DataProvider {
         .update({ status: "disconnected", connected_at: null })
         .eq("organization_id", ctx.orgId)
         .eq("channel", channel);
+      if (channel === "messenger") {
+        // Retire aussi la page et son jeton (le webhook cesse d'ingérer).
+        await this.raw.rpc("delete_messenger_page", {
+          p_organization_id: ctx.orgId,
+        });
+      }
       this.notify();
     },
   };
