@@ -131,6 +131,22 @@ export async function listUserPages(userToken: string): Promise<MessengerPage[]>
   return result.data ?? [];
 }
 
+/** Diagnostic : autorisations réellement accordées par l'utilisateur. */
+export async function listGrantedPermissions(
+  userToken: string
+): Promise<string[]> {
+  try {
+    const result = await graph<{
+      data: Array<{ permission: string; status: string }>;
+    }>(`/me/permissions?access_token=${encodeURIComponent(userToken)}`);
+    return (result.data ?? [])
+      .filter((p) => p.status === "granted")
+      .map((p) => p.permission);
+  } catch {
+    return [];
+  }
+}
+
 /** Abonne la Page aux webhooks de l'app (réception des messages). */
 export async function subscribePageToWebhooks(
   pageId: string,

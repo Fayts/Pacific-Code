@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import {
   exchangeCodeForUserToken,
+  listGrantedPermissions,
   listUserPages,
   messengerConfigured,
   subscribePageToWebhooks,
@@ -85,10 +86,14 @@ export async function POST(request: NextRequest) {
     );
     const pages = await listUserPages(userToken);
     if (pages.length === 0) {
+      // Diagnostic : quelles autorisations Facebook a-t-il réellement accordées ?
+      const granted = await listGrantedPermissions(userToken);
       return NextResponse.json(
         {
           error:
-            "Aucune Page Facebook trouvée sur ce compte. Vérifiez que vous êtes admin de votre Page et que vous l'avez cochée dans la fenêtre Facebook.",
+            "Aucune Page Facebook renvoyée par Meta. Autorisations accordées : " +
+            (granted.length > 0 ? granted.join(", ") : "aucune") +
+            ". Il manque probablement « pages_show_list » — relancez la connexion et validez tous les écrans Facebook.",
         },
         { status: 400 }
       );
