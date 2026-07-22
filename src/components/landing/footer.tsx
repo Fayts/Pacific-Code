@@ -40,6 +40,15 @@ export function LandingFooter() {
               Créer un compte
             </Link>
           </div>
+          <div className="flex flex-col gap-2.5">
+            <p className="font-semibold text-white">Légal</p>
+            <Link href="/confidentialite" className="transition hover:text-white">
+              Confidentialité
+            </Link>
+            <Link href="/conditions" className="transition hover:text-white">
+              Conditions d&apos;utilisation
+            </Link>
+          </div>
         </nav>
       </div>
       <div className="mx-auto mt-10 max-w-6xl border-t border-white/10 px-6 pt-6">
