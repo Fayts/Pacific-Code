@@ -245,6 +245,47 @@ export async function sendMessengerText(
   });
 }
 
+/** Fiche publique de la Page (import des informations de l'entreprise). */
+export type FacebookPageProfile = {
+  id: string;
+  name?: string;
+  about?: string;
+  description?: string;
+  phone?: string;
+  emails?: string[];
+  website?: string;
+  single_line_address?: string;
+  category?: string;
+};
+
+export async function fetchPageProfile(
+  pageId: string,
+  pageToken: string
+): Promise<FacebookPageProfile> {
+  return graph<FacebookPageProfile>(
+    `/${pageId}?fields=name,about,description,phone,emails,website,single_line_address,category&access_token=${encodeURIComponent(pageToken)}`
+  );
+}
+
+/** Textes des publications récentes de la Page (tarifs, annonces…). */
+export async function fetchPagePosts(
+  pageId: string,
+  pageToken: string,
+  limit = 25
+): Promise<string[]> {
+  try {
+    const result = await graph<{ data?: Array<{ message?: string }> }>(
+      `/${pageId}/posts?fields=message&limit=${limit}&access_token=${encodeURIComponent(pageToken)}`
+    );
+    return (result.data ?? [])
+      .map((post) => post.message?.trim() ?? "")
+      .filter((message) => message.length > 0);
+  } catch {
+    // Publications inaccessibles : l'import se limite à la fiche de la Page.
+    return [];
+  }
+}
+
 /** Nom public de l'expéditeur (échoue silencieusement : nom facultatif). */
 export async function fetchSenderName(
   pageToken: string,

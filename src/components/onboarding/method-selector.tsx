@@ -58,10 +58,10 @@ const METHODS: Array<{
   {
     id: "website",
     icon: Globe,
-    title: "J’ai un site web",
-    text: "Importez les informations publiques de votre entreprise et de votre catalogue.",
-    cta: "Importer mon site",
-    badge: "Démo",
+    title: "J’ai un site ou une Page Facebook",
+    text: "Récupérez automatiquement vos informations publiques : entreprise, biens, tarifs.",
+    cta: "Importer automatiquement",
+    badge: "Nouveau",
   },
 ];
 
@@ -100,9 +100,9 @@ export function MethodSelector({
                   <span
                     className={cn(
                       "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1",
-                      method.badge === "Recommandé"
-                        ? "bg-pc-turquoise/10 text-pc-lagoon ring-pc-turquoise/30"
-                        : "bg-amber-50 text-amber-800 ring-amber-200"
+                      method.badge === "Démo"
+                        ? "bg-amber-50 text-amber-800 ring-amber-200"
+                        : "bg-pc-turquoise/10 text-pc-lagoon ring-pc-turquoise/30"
                     )}
                   >
                     {method.badge}
