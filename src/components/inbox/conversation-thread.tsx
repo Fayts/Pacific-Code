@@ -1,12 +1,18 @@
 "use client";
 
 // Colonne centrale : le fil de la conversation, façon messagerie.
-// Messages entrants à gauche, réponses (agent ou loueur) à droite.
+// Messages entrants à gauche, réponses (agent ou loueur) à droite,
+// et une zone de réponse manuelle en bas du fil.
 
-import { useEffect, useRef } from "react";
-import { Bot, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Bot, Loader2, Send, UserRound } from "lucide-react";
+import { useAppData } from "@/components/providers/app-data-provider";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ChannelLabel } from "@/components/inbox/channel-badge";
 import { ConversationStatusBadge } from "@/components/shared/status-badge";
+import { deliversForReal, sendReply } from "@/lib/services/inbox-service";
 import { formatDateTime } from "@/lib/core/format";
 import type { InboxConversation, InboxMessage } from "@/lib/types/inbox";
 import { cn } from "@/lib/utils";
@@ -20,11 +26,32 @@ export function ConversationThread({
   messages: InboxMessage[];
   timezone: string;
 }) {
+  const { provider } = useAppData();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const real = deliversForReal(conversation, provider);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, conversation.id]);
+
+  const send = async () => {
+    const body = draft.trim();
+    if (!body || sending) return;
+    setSending(true);
+    const result = await sendReply(
+      { conversationId: conversation.id, body, auto: false },
+      provider
+    );
+    setSending(false);
+    if (!result.ok) {
+      toast.error(result.error ?? "Envoi impossible — réessayez.");
+      return;
+    }
+    setDraft("");
+    toast.success(real ? "Réponse envoyée" : "Réponse enregistrée (simulation)");
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -93,6 +120,47 @@ export function ConversationThread({
           );
         })}
         <div ref={bottomRef} />
+      </div>
+
+      {/* Réponse manuelle */}
+      <div className="border-t border-border p-3">
+        <div className="flex items-end gap-2">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            rows={2}
+            maxLength={4000}
+            placeholder={`Répondre à ${conversation.customer_name}…`}
+            className="max-h-32 flex-1 resize-none bg-card"
+            aria-label="Votre réponse"
+            disabled={sending}
+          />
+          <Button
+            type="button"
+            size="icon-lg"
+            onClick={() => void send()}
+            disabled={sending || !draft.trim()}
+            className="bg-gradient-to-br from-pc-lagoon to-pc-turquoise text-white shadow-lg shadow-pc-lagoon/25 hover:brightness-105"
+            aria-label="Envoyer la réponse"
+          >
+            {sending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Send className="size-4" aria-hidden />
+            )}
+          </Button>
+        </div>
+        <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
+          {real
+            ? `Votre réponse part réellement sur ${conversation.channel === "messenger" ? "Messenger" : "la boîte e-mail du client"}, dans le fil d'origine.`
+            : "Canal simulé : la réponse est enregistrée dans le fil sans être délivrée au client."}
+        </p>
       </div>
     </div>
   );

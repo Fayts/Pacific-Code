@@ -21,6 +21,7 @@ import {
 import { useAppData } from "@/components/providers/app-data-provider";
 import type { AgentAnalysis } from "@/lib/ai/agent-engine";
 import {
+  deliversForReal,
   ignoreConversation,
   sendReply,
   transferConversation,
@@ -75,6 +76,7 @@ export function AgentPanel({
   const currency = organization.currency;
 
   const reply = draft ?? analysis?.draftReply ?? "";
+  const real = deliversForReal(conversation, provider);
   const closed =
     conversation.status === "replied" ||
     conversation.status === "auto_replied" ||
@@ -260,8 +262,8 @@ export function AgentPanel({
         {closed ? (
           <p className="text-center text-xs text-muted-foreground">
             Conversation{" "}
-            {conversation.status === "ignored" ? "ignorée" : "traitée"} — envoi
-            simulé en mode démonstration.
+            {conversation.status === "ignored" ? "ignorée" : "traitée"}
+            {real ? "." : " — envoi simulé en mode démonstration."}
           </p>
         ) : (
           <>
@@ -281,7 +283,7 @@ export function AgentPanel({
                         },
                         provider
                       ),
-                    "Réponse envoyée (simulée)"
+                    real ? "Réponse envoyée" : "Réponse envoyée (simulée)"
                   )
                 }
               >
@@ -309,7 +311,9 @@ export function AgentPanel({
                           },
                           provider
                         ),
-                      "Réponse envoyée automatiquement (simulée)"
+                      real
+                        ? "Réponse envoyée automatiquement"
+                        : "Réponse envoyée automatiquement (simulée)"
                     )
                   }
                 >
@@ -332,7 +336,7 @@ export function AgentPanel({
                         },
                         provider
                       ),
-                    "Formulaire envoyé (simulé)"
+                    real ? "Formulaire envoyé" : "Formulaire envoyé (simulé)"
                   )
                 }
               >

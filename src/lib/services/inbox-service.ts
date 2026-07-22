@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { getDataProvider } from "@/lib/data";
 import type { DataProvider } from "@/lib/data/repositories";
-import type { ChannelKind } from "@/lib/types/inbox";
+import type { ChannelKind, InboxConversation } from "@/lib/types/inbox";
 import {
   actionError,
   actionOk,
@@ -55,6 +55,24 @@ const settingsSchema = z.object({
     .optional(),
   activated_at: z.string().nullable().optional(),
 });
+
+/**
+ * La réponse sur cette conversation sera-t-elle réellement délivrée au
+ * client ? Vrai en mode Supabase pour un fil Messenger (psid) ou e-mail
+ * (Gmail/Outlook) réel — faux pour les canaux simulés et le mode mock.
+ */
+export function deliversForReal(
+  conversation: Pick<InboxConversation, "channel" | "customer_contact">,
+  provider: DataProvider = getDataProvider()
+): boolean {
+  if (provider.kind !== "supabase") return false;
+  return (
+    (conversation.channel === "messenger" &&
+      Boolean(conversation.customer_contact?.startsWith("psid:"))) ||
+    ((conversation.channel === "gmail" || conversation.channel === "outlook") &&
+      Boolean(conversation.customer_contact?.startsWith("email:")))
+  );
+}
 
 /**
  * Envoi d'une réponse sur le canal de la conversation.
