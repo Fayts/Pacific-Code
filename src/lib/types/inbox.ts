@@ -5,7 +5,7 @@
 // agent_settings) sans rien changer côté UI/services.
 
 /** Canal d'origine d'une conversation. */
-export type ChannelKind = "messenger" | "gmail" | "whatsapp" | "form";
+export type ChannelKind = "messenger" | "gmail" | "outlook" | "whatsapp" | "form";
 
 export type ChannelStatus = "connected" | "disconnected";
 

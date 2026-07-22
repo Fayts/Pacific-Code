@@ -153,6 +153,7 @@ export const CONVERSATION_STATUS: Record<ConversationStatus, BadgeStyle> = {
 export const CHANNEL_LABELS: Record<ChannelKind, string> = {
   messenger: "Messenger",
   gmail: "Gmail",
+  outlook: "Outlook",
   whatsapp: "WhatsApp",
   form: "Formulaire",
 };

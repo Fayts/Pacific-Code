@@ -58,6 +58,7 @@ const EXAMPLE_MESSAGE =
 const CHANNEL_ITEMS: Record<Exclude<ChannelKind, "form">, string> = {
   messenger: CHANNEL_LABELS.messenger,
   gmail: CHANNEL_LABELS.gmail,
+  outlook: CHANNEL_LABELS.outlook,
   whatsapp: CHANNEL_LABELS.whatsapp,
 };
 

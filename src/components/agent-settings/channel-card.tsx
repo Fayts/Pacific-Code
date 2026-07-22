@@ -28,10 +28,16 @@ const CARD_TEXTS: Record<
     cta: "Connecter Facebook",
   },
   gmail: {
-    title: "Gmail Professionnel",
+    title: "Gmail",
     description:
-      "Connectez votre boîte mail afin que l'agent IA détecte automatiquement les demandes de location.",
+      "Connectez votre boîte Gmail : les demandes reçues par e-mail arrivent dans la boîte de réception et vos réponses partent dans le fil d'origine.",
     cta: "Connecter Gmail",
+  },
+  outlook: {
+    title: "Outlook / Hotmail",
+    description:
+      "Connectez votre boîte Outlook ou Hotmail : les demandes reçues par e-mail arrivent dans la boîte de réception, réponses comprises.",
+    cta: "Connecter Outlook",
   },
   whatsapp: {
     title: "WhatsApp Business",
@@ -40,6 +46,9 @@ const CARD_TEXTS: Record<
     cta: "Connecter WhatsApp",
   },
 };
+
+/** Canaux dont la connexion réelle (OAuth) est disponible. */
+const REAL_CHANNELS = new Set<ChannelKind>(["messenger", "gmail", "outlook"]);
 
 export function ChannelCard({
   channel,
@@ -57,25 +66,34 @@ export function ChannelCard({
   const connected = connection?.status === "connected";
   const realMode = provider.kind === "supabase";
 
-  // Mode réel + Messenger : vrai parcours OAuth Facebook.
+  // Mode réel : vrai parcours OAuth (Facebook, Google ou Microsoft).
   const startRealConnect = async () => {
     setRedirecting(true);
     try {
       const token = await provider.getAccessToken?.();
       if (!token) throw new Error("Reconnectez-vous puis réessayez.");
-      const response = await fetch("/api/channels/messenger/oauth-url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          redirectUri: `${window.location.origin}/assistant/connections/messenger-callback`,
-        }),
-      });
+      const isEmail = channel === "gmail" || channel === "outlook";
+      const response = await fetch(
+        isEmail
+          ? "/api/channels/email/oauth-url"
+          : "/api/channels/messenger/oauth-url",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...(isEmail ? { provider: channel } : {}),
+            redirectUri: isEmail
+              ? `${window.location.origin}/assistant/connections/email-callback`
+              : `${window.location.origin}/assistant/connections/messenger-callback`,
+          }),
+        }
+      );
       const data = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !data.url) {
-        throw new Error(data.error ?? "Connexion Facebook indisponible.");
+        throw new Error(data.error ?? "Connexion indisponible.");
       }
       window.location.href = data.url;
     } catch (err) {
@@ -83,7 +101,7 @@ export function ChannelCard({
       toast.error(
         err instanceof Error && err.message
           ? err.message
-          : "Connexion Facebook impossible."
+          : "Connexion impossible."
       );
     }
   };
@@ -137,9 +155,9 @@ export function ChannelCard({
               }}
             />
           </div>
-        ) : realMode && channel === "messenger" ? (
+        ) : realMode && REAL_CHANNELS.has(channel) ? (
           <Button type="button" disabled={redirecting} onClick={startRealConnect}>
-            {redirecting ? "Redirection vers Facebook…" : texts.cta}
+            {redirecting ? "Redirection en cours…" : texts.cta}
           </Button>
         ) : realMode ? (
           <Button type="button" disabled variant="outline">

@@ -929,6 +929,13 @@ export class SupabaseDataProvider implements DataProvider {
           p_organization_id: ctx.orgId,
         });
       }
+      if (channel === "gmail" || channel === "outlook") {
+        // Retire le compte e-mail et ses jetons (la relève cesse).
+        await this.raw.rpc("delete_email_account", {
+          p_organization_id: ctx.orgId,
+          p_provider: channel,
+        });
+      }
       this.notify();
     },
   };

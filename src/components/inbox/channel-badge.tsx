@@ -18,6 +18,7 @@ const CHANNEL_STYLES: Record<
 > = {
   messenger: { icon: MessageCircle, chip: "bg-blue-100 text-blue-700" },
   gmail: { icon: Mail, chip: "bg-red-100 text-red-700" },
+  outlook: { icon: Mail, chip: "bg-sky-100 text-sky-700" },
   whatsapp: { icon: Phone, chip: "bg-emerald-100 text-emerald-700" },
   form: { icon: FileText, chip: "bg-cyan-100 text-cyan-800" },
 };

@@ -14,7 +14,13 @@ import {
   type ActionResult,
 } from "@/server/action-result";
 
-const channelSchema = z.enum(["messenger", "gmail", "whatsapp", "form"]);
+const channelSchema = z.enum([
+  "messenger",
+  "gmail",
+  "outlook",
+  "whatsapp",
+  "form",
+]);
 
 const replySchema = z.object({
   conversationId: z.string().uuid(),
@@ -52,9 +58,9 @@ const settingsSchema = z.object({
 
 /**
  * Envoi d'une réponse sur le canal de la conversation.
- * Messenger en mode réel : envoi effectif via la route serveur (jeton de
- * Page côté serveur, trace ajoutée au fil). Autres cas : envoi simulé
- * (message ajouté au fil uniquement).
+ * En mode réel, Messenger et les fils e-mail (Gmail/Outlook) partent
+ * effectivement via les routes serveur (jetons côté serveur, trace ajoutée
+ * au fil). Autres cas : envoi simulé (message ajouté au fil uniquement).
  */
 export async function sendReply(
   input: z.infer<typeof replySchema>,
@@ -68,15 +74,20 @@ export async function sendReply(
   );
   if (!conversation) return actionError("Conversation introuvable");
 
-  if (
-    provider.kind === "supabase" &&
+  const realSendRoute =
     conversation.channel === "messenger" &&
-    conversation.customer_contact?.startsWith("psid:") &&
-    provider.getAccessToken
-  ) {
+    conversation.customer_contact?.startsWith("psid:")
+      ? "/api/channels/messenger/send"
+      : (conversation.channel === "gmail" ||
+            conversation.channel === "outlook") &&
+          conversation.customer_contact?.startsWith("email:")
+        ? "/api/channels/email/send"
+        : null;
+
+  if (provider.kind === "supabase" && realSendRoute && provider.getAccessToken) {
     const token = await provider.getAccessToken();
     if (token) {
-      const response = await fetch("/api/channels/messenger/send", {
+      const response = await fetch(realSendRoute, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +99,7 @@ export async function sendReply(
         error?: string;
       };
       if (!response.ok) {
-        return actionError(data.error ?? "Envoi Messenger impossible");
+        return actionError(data.error ?? "Envoi impossible");
       }
       // Les écritures ont eu lieu côté serveur : ce setStatus idempotent
       // déclenche simplement le rafraîchissement de l'interface.

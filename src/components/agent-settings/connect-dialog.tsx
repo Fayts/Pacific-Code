@@ -63,6 +63,18 @@ const FLOWS: Record<
     webhookNote:
       "La surveillance de la boîte de réception est activée automatiquement.",
   },
+  outlook: {
+    chooseTitle: "Choisissez votre compte Microsoft",
+    chooseDescription:
+      "Connexion Microsoft (simulation). L'agent ne lit que les emails liés aux demandes de location.",
+    permissions: [
+      "Lire les nouveaux emails entrants",
+      "Envoyer des réponses en votre nom",
+      "Aucun accès aux autres données du compte",
+    ],
+    webhookNote:
+      "La surveillance de la boîte de réception est activée automatiquement.",
+  },
   whatsapp: {
     chooseTitle: "Votre numéro WhatsApp Business",
     chooseDescription:
@@ -96,10 +108,10 @@ export function ChannelConnectDialog({
   const options =
     channel === "messenger"
       ? [`${organization.name} — Page Facebook`, `${organization.name} (page secondaire)`]
-      : channel === "gmail"
+      : channel === "gmail" || channel === "outlook"
         ? [
             organization.email ?? "contact@entreprise.pf",
-            "Utiliser une autre adresse Gmail",
+            `Utiliser une autre adresse ${channel === "gmail" ? "Gmail" : "Outlook"}`,
           ]
         : [];
   const [selected, setSelected] = useState(0);

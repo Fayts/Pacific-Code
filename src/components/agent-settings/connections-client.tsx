@@ -72,7 +72,7 @@ export function ConnectionsClient() {
           <h2 className="text-sm font-semibold text-foreground">
             1. Vos canaux
           </h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <ChannelCard
               channel="messenger"
               connection={byChannel.get("messenger") ?? null}
@@ -81,6 +81,11 @@ export function ConnectionsClient() {
             <ChannelCard
               channel="gmail"
               connection={byChannel.get("gmail") ?? null}
+              organization={organization}
+            />
+            <ChannelCard
+              channel="outlook"
+              connection={byChannel.get("outlook") ?? null}
               organization={organization}
             />
             <ChannelCard
