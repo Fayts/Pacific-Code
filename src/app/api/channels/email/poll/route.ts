@@ -72,8 +72,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Relève impossible" }, { status: 500 });
   }
 
-  const summary: Array<{ provider: string; ingested: number; error?: string }> =
-    [];
+  const summary: Array<{
+    provider: string;
+    ingested: number;
+    filtered?: number;
+    error?: string;
+  }> = [];
 
   for (const account of accountRows ?? []) {
     try {
@@ -96,8 +100,16 @@ export async function POST(request: NextRequest) {
               account.cursor
             );
 
+      // Les courriels automatiques (newsletters, promos, notifications) sont
+      // écartés : seuls les messages de personnes réelles entrent dans la
+      // boîte de réception. Ils comptent quand même pour le point de reprise.
       let ingested = 0;
+      let filtered = 0;
       for (const message of messages) {
+        if (message.automated) {
+          filtered += 1;
+          continue;
+        }
         const { error: ingestError } = await rawRpc(
           supabase,
           "ingest_email_message",
@@ -134,7 +146,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      summary.push({ provider: account.provider, ingested });
+      summary.push({ provider: account.provider, ingested, filtered });
     } catch (err) {
       // Journal technique sans contenu de message.
       console.error(

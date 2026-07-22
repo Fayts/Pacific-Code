@@ -27,6 +27,11 @@ export type IncomingEmail = {
   replyToMessageId: string;
   /** Position de relève : gmail = epoch ms ; outlook = ISO receivedDateTime. */
   position: string;
+  /**
+   * Courriel automatique (newsletter, promo, notification de service) :
+   * retourné pour faire avancer le point de reprise mais à ne pas ingérer.
+   */
+  automated: boolean;
 };
 
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -327,6 +332,45 @@ export function htmlToText(html: string): string {
     .trim();
 }
 
+/**
+ * Expéditeurs machine : adresses d'envoi en masse ou sans réponse possible.
+ * Liste volontairement resserrée pour ne jamais écarter un vrai client
+ * (pas de `info@` ni `contact@`, souvent utilisés par de petites entreprises).
+ */
+const AUTOMATED_LOCAL_PARTS =
+  /^(no-?reply|do-?not-?reply|ne-?pas-?repondre|newsletters?|news|notifications?|notify|mailer|mailer-daemon|postmaster|bounces?|marketing|promo(tions)?)([+.-].*)?$/i;
+
+/**
+ * Courriel automatique (newsletter, promotion, notification de service) ?
+ * Croise plusieurs signaux ; un seul suffit :
+ * - adresse d'expédition machine (noreply@, newsletter@, …) ;
+ * - en-tête List-Unsubscribe (obligatoire pour l'envoi en masse) ;
+ * - en-tête Precedence bulk/list/junk ou Auto-Submitted ;
+ * - catégorie Gmail Promotions / Réseaux sociaux / Forums.
+ */
+export function isAutomatedEmail(input: {
+  fromEmail: string;
+  listUnsubscribe?: string;
+  precedence?: string;
+  autoSubmitted?: string;
+  gmailLabelIds?: string[];
+}): boolean {
+  const localPart = input.fromEmail.split("@")[0] ?? "";
+  if (AUTOMATED_LOCAL_PARTS.test(localPart)) return true;
+  if (input.listUnsubscribe?.trim()) return true;
+  if (/^(bulk|list|junk)$/i.test(input.precedence?.trim() ?? "")) return true;
+  const autoSubmitted = input.autoSubmitted?.trim().toLowerCase() ?? "";
+  if (autoSubmitted && autoSubmitted !== "no") return true;
+  const bulkCategories = [
+    "CATEGORY_PROMOTIONS",
+    "CATEGORY_SOCIAL",
+    "CATEGORY_FORUMS",
+  ];
+  return (input.gmailLabelIds ?? []).some((label) =>
+    bulkCategories.includes(label)
+  );
+}
+
 type GmailPayload = {
   mimeType?: string;
   body?: { data?: string };
@@ -360,6 +404,7 @@ type GmailMessage = {
   id: string;
   threadId: string;
   internalDate?: string;
+  labelIds?: string[];
   payload?: GmailPayload & {
     headers?: Array<{ name: string; value: string }>;
   };
@@ -403,6 +448,13 @@ export async function listNewGmailMessages(
       body: extractGmailBody(message.payload) || "[message vide]",
       replyToMessageId: gmailHeader(message, "Message-ID"),
       position: message.internalDate ?? "",
+      automated: isAutomatedEmail({
+        fromEmail: from.email,
+        listUnsubscribe: gmailHeader(message, "List-Unsubscribe"),
+        precedence: gmailHeader(message, "Precedence"),
+        autoSubmitted: gmailHeader(message, "Auto-Submitted"),
+        gmailLabelIds: message.labelIds,
+      }),
     });
   }
   // Ordre chronologique pour faire avancer le point de reprise proprement.
@@ -417,6 +469,8 @@ type GraphMessage = {
   receivedDateTime?: string;
   from?: { emailAddress?: { name?: string; address?: string } };
   body?: { contentType?: string; content?: string };
+  /** Boîte prioritaire Outlook : "other" = courrier en masse ou secondaire. */
+  inferenceClassification?: string;
 };
 
 /** Nouveaux messages Outlook depuis le point de reprise (ISO). */
@@ -426,7 +480,8 @@ export async function listNewOutlookMessages(
   cursorIso: string
 ): Promise<IncomingEmail[]> {
   const filter = encodeURIComponent(`receivedDateTime gt ${cursorIso}`);
-  const select = "id,conversationId,subject,receivedDateTime,from,body";
+  const select =
+    "id,conversationId,subject,receivedDateTime,from,body,inferenceClassification";
   const list = await apiGet<{ value?: GraphMessage[] }>(
     `${GRAPH}/me/mailFolders/inbox/messages?$filter=${filter}&$orderby=receivedDateTime asc&$top=20&$select=${select}`,
     accessToken,
@@ -448,6 +503,9 @@ export async function listNewOutlookMessages(
           : content.trim()) || "[message vide]",
       replyToMessageId: message.id,
       position: message.receivedDateTime ?? "",
+      automated:
+        message.inferenceClassification?.toLowerCase() === "other" ||
+        isAutomatedEmail({ fromEmail: email }),
     });
   }
   return results;

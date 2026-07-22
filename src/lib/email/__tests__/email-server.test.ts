@@ -6,6 +6,7 @@ import {
   buildGmailReplyMime,
   extractGmailBody,
   htmlToText,
+  isAutomatedEmail,
   parseFromHeader,
   signEmailOauthState,
   verifyEmailOauthState,
@@ -106,6 +107,69 @@ describe("extractGmailBody", () => {
       extractGmailBody({ mimeType: "text/plain", body: { data: b64("Direct") } })
     ).toBe("Direct");
     expect(extractGmailBody(undefined)).toBe("");
+  });
+});
+
+describe("isAutomatedEmail", () => {
+  it("écarte les expéditeurs machine", () => {
+    for (const email of [
+      "noreply@spartoo.com",
+      "no-reply@higgsfield.ai",
+      "donotreply@banque.pf",
+      "newsletter@tripo.ai",
+      "notifications@facebook.com",
+      "mailer-daemon@googlemail.com",
+      "marketing+promo@boutique.com",
+    ]) {
+      expect(isAutomatedEmail({ fromEmail: email })).toBe(true);
+    }
+  });
+
+  it("écarte l'envoi en masse via les en-têtes", () => {
+    expect(
+      isAutomatedEmail({
+        fromEmail: "team@startup.io",
+        listUnsubscribe: "<https://startup.io/unsub>",
+      })
+    ).toBe(true);
+    expect(
+      isAutomatedEmail({ fromEmail: "hello@app.com", precedence: "bulk" })
+    ).toBe(true);
+    expect(
+      isAutomatedEmail({
+        fromEmail: "hello@app.com",
+        autoSubmitted: "auto-generated",
+      })
+    ).toBe(true);
+    expect(
+      isAutomatedEmail({ fromEmail: "client@mail.pf", autoSubmitted: "no" })
+    ).toBe(false);
+  });
+
+  it("écarte les catégories Gmail Promotions / Réseaux sociaux / Forums", () => {
+    expect(
+      isAutomatedEmail({
+        fromEmail: "enzo@spartoo.com",
+        gmailLabelIds: ["INBOX", "CATEGORY_PROMOTIONS"],
+      })
+    ).toBe(true);
+    expect(
+      isAutomatedEmail({
+        fromEmail: "client@mail.pf",
+        gmailLabelIds: ["INBOX", "CATEGORY_PERSONAL"],
+      })
+    ).toBe(false);
+  });
+
+  it("laisse passer les vrais clients, y compris info@ et contact@", () => {
+    for (const email of [
+      "moana.tehani@gmail.com",
+      "client@mail.pf",
+      "info@pension-fare.pf",
+      "contact@tahiti-tours.com",
+    ]) {
+      expect(isAutomatedEmail({ fromEmail: email })).toBe(false);
+    }
   });
 });
 
