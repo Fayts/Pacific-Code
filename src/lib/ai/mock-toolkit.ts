@@ -60,6 +60,7 @@ export function createDemoToolkit(
             name: e.name,
             reference: e.internal_ref,
             dailyPrice: e.daily_price,
+            pricingMode: e.pricing_mode,
             deposit: e.deposit_amount,
             quantity: e.quantity_total,
             status: EQUIPMENT_STATUS[e.status].label,
@@ -261,6 +262,7 @@ export function createDemoToolkit(
         const totals = computeBookingTotals({
           items: input.items.map((i) => ({
             dailyPrice: byId.get(i.equipmentId)!.daily_price,
+            pricingMode: byId.get(i.equipmentId)!.pricing_mode,
             quantity: i.quantity,
           })),
           durationDays,
@@ -292,6 +294,7 @@ export function createDemoToolkit(
               equipmentName: byId.get(i.equipmentId)!.name,
               quantity: i.quantity,
               dailyPrice: byId.get(i.equipmentId)!.daily_price,
+              pricingMode: byId.get(i.equipmentId)!.pricing_mode,
             })),
             startAt: input.startAt,
             endAt: input.endAt,

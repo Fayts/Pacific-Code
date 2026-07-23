@@ -195,6 +195,7 @@ const addRentalItem: ToolDefinition = {
     tracking: z.enum(["stock", "individual"]).optional(),
     quantity: z.number().int().min(1).max(10_000).optional(),
     dailyPrice: money.optional(),
+    pricingMode: z.enum(["daily", "flat"]).optional(),
     hourlyPrice: money.optional(),
     weeklyPrice: money.optional(),
     deposit: money.optional(),
@@ -245,6 +246,8 @@ const addRentalItem: ToolDefinition = {
         (input.tracking as "stock" | "individual" | undefined) ?? "stock",
       quantity: (input.quantity as number | undefined) ?? 1,
       dailyPrice,
+      pricingMode:
+        (input.pricingMode as "daily" | "flat" | undefined) ?? "daily",
       hourlyPrice,
       weeklyPrice,
       deposit,
@@ -385,11 +388,12 @@ const setItemQuantity: ToolDefinition = {
 
 const setItemPricing: ToolDefinition = {
   description:
-    "Fixe les tarifs d'un bien (jour, heure et/ou semaine, en XPF entiers). Utiliser confidence \"verify\" tant que l'utilisateur n'a pas confirmé la période (ex. montant donné sans préciser « par jour »).",
+    "Fixe les tarifs d'un bien (jour, heure et/ou semaine, en XPF entiers). pricingMode \"flat\" si le prix est un forfait fixe (prestation, prix à l'unité), \"daily\" s'il dépend de la durée. Utiliser confidence \"verify\" tant que l'utilisateur n'a pas confirmé la période (ex. montant donné sans préciser « par jour » ni « forfait »).",
   schema: z
     .object({
       itemId: shortText,
       dailyPrice: money.nullable().optional(),
+      pricingMode: z.enum(["daily", "flat"]).optional(),
       hourlyPrice: money.nullable().optional(),
       weeklyPrice: money.nullable().optional(),
       confidence: confidence,
@@ -397,6 +401,7 @@ const setItemPricing: ToolDefinition = {
     .refine(
       (v) =>
         v.dailyPrice !== undefined ||
+        v.pricingMode !== undefined ||
         v.hourlyPrice !== undefined ||
         v.weeklyPrice !== undefined,
       { message: "Fournir au moins un tarif." }
@@ -405,6 +410,7 @@ const setItemPricing: ToolDefinition = {
     const input = this.schema.parse(raw) as {
       itemId: string;
       dailyPrice?: number | null;
+      pricingMode?: "daily" | "flat";
       hourlyPrice?: number | null;
       weeklyPrice?: number | null;
       confidence: Confidence;
@@ -412,6 +418,7 @@ const setItemPricing: ToolDefinition = {
     findItem(draft, input.itemId);
     const patch: Partial<DraftItem> = { priceConfidence: input.confidence };
     if (input.dailyPrice !== undefined) patch.dailyPrice = input.dailyPrice;
+    if (input.pricingMode !== undefined) patch.pricingMode = input.pricingMode;
     if (input.hourlyPrice !== undefined) patch.hourlyPrice = input.hourlyPrice;
     if (input.weeklyPrice !== undefined) patch.weeklyPrice = input.weeklyPrice;
     return {

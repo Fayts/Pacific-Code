@@ -130,7 +130,7 @@ export async function createAssistantToolkit(
     async searchEquipment(input: z.infer<typeof searchEquipmentInput>) {
       let query = supabase
         .from("equipment_items")
-        .select("id, name, internal_ref, daily_price, deposit_amount, quantity_total, status, equipment_categories(name)")
+        .select("id, name, internal_ref, daily_price, pricing_mode, deposit_amount, quantity_total, status, equipment_categories(name)")
         .eq("organization_id", orgId)
         .is("archived_at", null)
         .order("name")
@@ -154,6 +154,8 @@ export async function createAssistantToolkit(
           (e.equipment_categories as unknown as { name: string } | null)?.name ??
           null,
         dailyPrice: e.daily_price,
+        // « daily » : prix par jour ; « flat » : forfait à prix fixe.
+        pricingMode: e.pricing_mode,
         deposit: e.deposit_amount,
         quantity: e.quantity_total,
         status: EQUIPMENT_STATUS[e.status].label,
@@ -357,7 +359,7 @@ export async function createAssistantToolkit(
       const equipmentIds = input.items.map((i) => i.equipmentId);
       const { data: equipment } = await supabase
         .from("equipment_items")
-        .select("id, name, daily_price, deposit_amount, min_rental_days")
+        .select("id, name, daily_price, pricing_mode, deposit_amount, min_rental_days")
         .eq("organization_id", orgId)
         .in("id", equipmentIds)
         .is("archived_at", null);
@@ -402,6 +404,7 @@ export async function createAssistantToolkit(
       const totals = computeBookingTotals({
         items: input.items.map((i) => ({
           dailyPrice: byId.get(i.equipmentId)!.daily_price,
+          pricingMode: byId.get(i.equipmentId)!.pricing_mode,
           quantity: i.quantity,
         })),
         durationDays,
@@ -433,6 +436,7 @@ export async function createAssistantToolkit(
             equipmentName: byId.get(i.equipmentId)!.name,
             quantity: i.quantity,
             dailyPrice: byId.get(i.equipmentId)!.daily_price,
+            pricingMode: byId.get(i.equipmentId)!.pricing_mode,
           })),
           startAt: input.startAt,
           endAt: input.endAt,

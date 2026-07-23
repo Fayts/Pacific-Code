@@ -270,6 +270,7 @@ export class MockDataProvider implements DataProvider {
         internal_ref: draft.internalRef || null,
         description: draft.description || null,
         daily_price: draft.dailyPrice,
+        pricing_mode: draft.pricingMode,
         deposit_amount: draft.depositAmount,
         quantity_total: draft.quantityTotal,
         min_rental_days: draft.minRentalDays,
@@ -295,6 +296,7 @@ export class MockDataProvider implements DataProvider {
       item.internal_ref = draft.internalRef || null;
       item.description = draft.description || null;
       item.daily_price = draft.dailyPrice;
+      item.pricing_mode = draft.pricingMode;
       item.deposit_amount = draft.depositAmount;
       item.quantity_total = draft.quantityTotal;
       item.min_rental_days = draft.minRentalDays;
@@ -360,6 +362,7 @@ export class MockDataProvider implements DataProvider {
         internalRef: "",
         description: source.description ?? "",
         dailyPrice: source.daily_price,
+        pricingMode: source.pricing_mode,
         depositAmount: source.deposit_amount,
         quantityTotal: source.quantity_total,
         minRentalDays: source.min_rental_days,
@@ -807,6 +810,7 @@ export class MockDataProvider implements DataProvider {
           equipment_id: it.equipmentId,
           quantity: it.quantity,
           daily_price: equipment?.daily_price ?? 0,
+          pricing_mode: equipment?.pricing_mode ?? "daily",
           line_total: pricing.lineTotals[index] ?? 0,
           created_at: nowIso,
         });
@@ -842,6 +846,7 @@ export class MockDataProvider implements DataProvider {
           equipment_id: it.equipmentId,
           quantity: it.quantity,
           daily_price: equipment?.daily_price ?? 0,
+          pricing_mode: equipment?.pricing_mode ?? "daily",
           line_total: pricing.lineTotals[index] ?? 0,
           created_at: nowIso,
         });
@@ -931,6 +936,9 @@ export class MockDataProvider implements DataProvider {
           dailyPrice:
             db.equipment.find((e) => e.id === bi.equipment_id)?.daily_price ??
             0,
+          pricingMode:
+            db.equipment.find((e) => e.id === bi.equipment_id)?.pricing_mode ??
+            "daily",
           quantity: bi.quantity,
         })),
         durationDays: source.duration_days,

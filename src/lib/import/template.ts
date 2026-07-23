@@ -6,7 +6,8 @@ const HEADERS = [
   "Référence interne",
   "Description",
   "Quantité",
-  "Prix journalier (XPF)",
+  "Prix (XPF)",
+  "Tarification (jour ou forfait)",
   "Caution (XPF)",
   "Durée minimale (jours)",
   "Remarques",
@@ -19,13 +20,14 @@ const EXAMPLE_ROW = [
   "Injecteur-extracteur pour moquettes et sièges",
   "1",
   "7990",
+  "jour",
   "20000",
   "1",
   "Livré avec 2 bidons de shampoing",
 ];
 
 const NOTE_ROW = [
-  "— Ligne d'exemple à remplacer. Seuls Nom et Catégorie sont indispensables ; les prix sans valeur seront marqués « à compléter ». —",
+  "— Ligne d'exemple à remplacer. Seuls Nom et Catégorie sont indispensables ; les prix sans valeur seront marqués « à compléter ». Tarification : « jour » (prix × durée) ou « forfait » (prix fixe, ex. prestation). —",
 ];
 
 function toCsvLine(cells: string[]): string {

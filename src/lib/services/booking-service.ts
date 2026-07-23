@@ -119,6 +119,7 @@ async function prepare(
   const totals = computeBookingTotals({
     items: input.items.map((i) => ({
       dailyPrice: byId.get(i.equipmentId)!.daily_price,
+      pricingMode: byId.get(i.equipmentId)!.pricing_mode,
       quantity: i.quantity,
     })),
     durationDays,

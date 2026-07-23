@@ -123,6 +123,35 @@ describe("computeBookingTotals", () => {
     expect(totals.durationDays).toBe(2);
     expect(totals.subtotal).toBe(200);
   });
+
+  it("un forfait ne se multiplie pas par la durée", () => {
+    const totals = computeBookingTotals({
+      items: [
+        { dailyPrice: 6390, quantity: 1 }, // location : × 3 jours
+        { dailyPrice: 5000, quantity: 1, pricingMode: "flat" }, // forfait
+      ],
+      durationDays: 3,
+    });
+    expect(totals.lineTotals).toEqual([19_170, 5000]);
+    expect(totals.subtotal).toBe(24_170);
+  });
+
+  it("un forfait se multiplie par la quantité (2 matelas)", () => {
+    const totals = computeBookingTotals({
+      items: [{ dailyPrice: 5000, quantity: 2, pricingMode: "flat" }],
+      durationDays: 5,
+    });
+    expect(totals.lineTotals).toEqual([10_000]);
+    expect(totals.total).toBe(10_000);
+  });
+
+  it("pricingMode « daily » explicite = comportement historique", () => {
+    const totals = computeBookingTotals({
+      items: [{ dailyPrice: 1000, quantity: 1, pricingMode: "daily" }],
+      durationDays: 4,
+    });
+    expect(totals.subtotal).toBe(4000);
+  });
 });
 
 describe("requiredMinRentalDays", () => {

@@ -225,6 +225,7 @@ export function BookingForm({
     return computeBookingTotals({
       items: selectedEquipment.map((s) => ({
         dailyPrice: s.option.daily_price,
+        pricingMode: s.option.pricing_mode,
         quantity: s.draft.quantity,
       })),
       durationDays,
@@ -496,7 +497,9 @@ export function BookingForm({
                             <p className="text-sm font-medium">{eq.name}</p>
                             <p className="text-sm whitespace-nowrap text-muted-foreground">
                               {formatMoney(eq.daily_price, currency)}
-                              <span className="text-muted-foreground/70"> / jour</span>
+                              <span className="text-muted-foreground/70">
+                                {eq.pricing_mode === "flat" ? " forfait" : " / jour"}
+                              </span>
                             </p>
                           </div>
                           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">

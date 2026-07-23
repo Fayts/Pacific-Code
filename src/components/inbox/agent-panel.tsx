@@ -213,7 +213,10 @@ export function AgentPanel({
               </>
             ) : analysis.equipment ? (
               <span className="text-muted-foreground">
-                {formatMoney(analysis.equipment.dailyPrice, currency)} / jour
+                {formatMoney(analysis.equipment.dailyPrice, currency)}
+                {analysis.equipment.pricingMode === "flat"
+                  ? " forfait"
+                  : " / jour"}
               </span>
             ) : (
               <span className="text-muted-foreground">—</span>

@@ -34,6 +34,7 @@ function toDraft(values: EquipmentInput): EquipmentDraft {
     internalRef: values.internalRef ?? "",
     description: values.description ?? "",
     dailyPrice: values.dailyPrice,
+    pricingMode: values.pricingMode,
     depositAmount: values.depositAmount,
     quantityTotal: values.quantityTotal,
     minRentalDays: values.minRentalDays,

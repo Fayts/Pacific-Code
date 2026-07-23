@@ -17,6 +17,11 @@ import type { Database } from "@/lib/types/database";
 import { resolveProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { createAssistantToolkit, extractProposals } from "@/lib/ai/tools";
+import {
+  consumeAiQuota,
+  QUOTA_EXCEEDED_MESSAGE,
+  recordAiTokens,
+} from "@/lib/ai/quota";
 import { checkRateLimit, clientAddress } from "@/lib/core/rate-limit";
 import type { AssistantProposal } from "@/lib/ai/proposals";
 
@@ -116,6 +121,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Quota IA mensuel de l'organisation (protège le crédit de la plateforme).
+  const quota = await consumeAiQuota(supabase, organization.id);
+  if (!quota.allowed) {
+    return NextResponse.json({ error: QUOTA_EXCEEDED_MESSAGE }, { status: 429 });
+  }
+
   const toolkit = await createAssistantToolkit(supabase, {
     organizationId: organization.id,
     timezone: organization.timezone,
@@ -133,6 +144,8 @@ export async function POST(request: NextRequest) {
       tools: toolkit.aiTools,
       stopWhen: stepCountIs(8),
     });
+
+    await recordAiTokens(supabase, organization.id, result.usage);
 
     const toolOutputs = result.steps.flatMap((step) =>
       step.toolResults.map((r) => (r as { output?: unknown }).output ?? null)

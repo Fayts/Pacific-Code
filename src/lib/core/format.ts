@@ -17,6 +17,16 @@ export function formatMoney(amount: number, currency: string = "XPF"): string {
   }
 }
 
+/** « 7 990 XPF / jour » ou « 5 000 XPF forfait » selon le mode. */
+export function formatPrice(
+  amount: number,
+  currency: string = "XPF",
+  pricingMode: "daily" | "flat" = "daily"
+): string {
+  const money = formatMoney(amount, currency);
+  return pricingMode === "flat" ? `${money} forfait` : `${money} / jour`;
+}
+
 export function formatDate(
   date: Date | string,
   timeZone: string = "Pacific/Tahiti"

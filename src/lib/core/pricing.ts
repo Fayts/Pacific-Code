@@ -23,6 +23,8 @@ export function computeDurationDays(startAt: Date, endAt: Date): number {
 export type PricingItem = {
   dailyPrice: number;
   quantity: number;
+  /** "flat" : forfait (le prix ne se multiplie pas par la durée). */
+  pricingMode?: "daily" | "flat";
 };
 
 export type BookingTotals = {
@@ -35,9 +37,9 @@ export type BookingTotals = {
 };
 
 /**
- * Prix d'une réservation (V1) :
- * ligne = prix journalier × quantité × jours ; total = sous-total − remise + frais.
- * Le total ne descend jamais sous zéro.
+ * Prix d'une réservation :
+ * ligne par jour = prix × quantité × jours ; ligne au forfait = prix × quantité.
+ * Total = sous-total − remise + frais, jamais sous zéro.
  */
 export function computeBookingTotals(params: {
   items: PricingItem[];
@@ -50,9 +52,10 @@ export function computeBookingTotals(params: {
   const extraFeesAmount = round2(Math.max(0, params.extraFeesAmount ?? 0));
 
   const lineTotals = params.items.map((item) => {
-    const dailyPrice = Math.max(0, item.dailyPrice);
+    const price = Math.max(0, item.dailyPrice);
     const quantity = Math.max(1, Math.trunc(item.quantity));
-    return round2(dailyPrice * quantity * durationDays);
+    const days = item.pricingMode === "flat" ? 1 : durationDays;
+    return round2(price * quantity * days);
   });
 
   const subtotal = round2(lineTotals.reduce((sum, v) => sum + v, 0));

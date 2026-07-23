@@ -61,6 +61,8 @@ export const draftItemSchema = z.object({
   tracking: z.enum(["stock", "individual"]),
   quantity: z.number().int().min(1).max(10_000),
   dailyPrice: money.nullable(),
+  /** "daily" : prix × durée ; "flat" : forfait / prestation à prix fixe. */
+  pricingMode: z.enum(["daily", "flat"]).default("daily"),
   hourlyPrice: money.nullable(),
   weeklyPrice: money.nullable(),
   deposit: money.nullable(),

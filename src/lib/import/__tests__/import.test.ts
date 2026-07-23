@@ -74,11 +74,30 @@ describe("parseCsv + mapping", () => {
     expect(items[0].name).toBe("Kärcher Puzzi 10/1");
     expect(items[0].dailyPrice).toBe(7990);
     expect(items[0].depositAmount).toBe(20000);
+    expect(items[0].pricingMode).toBe("daily");
     expect(items[1].quantity).toBe(3);
     expect(items[1].dailyPrice).toBe(6000);
     expect(items[1].depositAmount).toBeNull();
     expect(items[1].priceConfidence).toBe("detected");
     expect(items[1].depositConfidence).toBe("missing");
+  });
+
+  it("associe la colonne Tarification sans absorber le prix, et lit « forfait »", () => {
+    const csvWithMode = [
+      "Nom;Prix (XPF);Tarification (jour ou forfait)",
+      "Kärcher Puzzi 10/1;7990;jour",
+      "Nettoyage matelas;5000;forfait",
+      "Nettoyage canapé;8000;Prestation au forfait",
+    ].join("\r\n");
+    const table = parseCsv(csvWithMode);
+    const mapping = autoMapColumns(table.headers);
+    expect(mapping).toEqual(["name", "dailyPrice", "pricingMode"]);
+
+    const items = rowsToItems(table, mapping);
+    expect(items[0].pricingMode).toBe("daily");
+    expect(items[1].pricingMode).toBe("flat");
+    expect(items[2].pricingMode).toBe("flat");
+    expect(items[1].dailyPrice).toBe(5000);
   });
 });
 
@@ -132,6 +151,7 @@ function fakeItem(patch: Partial<ParsedItem>): ParsedItem {
     tracking: "stock",
     quantity: 1,
     dailyPrice: 1000,
+    pricingMode: "daily",
     depositAmount: null,
     minRentalDays: 1,
     internalRef: "",

@@ -298,7 +298,11 @@ export function EquipmentDetailClient({ id }: { id: string }) {
             <CardContent>
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Prix journalier</dt>
+                  <dt className="text-muted-foreground">
+                    {item.pricing_mode === "flat"
+                      ? "Prix forfaitaire"
+                      : "Prix journalier"}
+                  </dt>
                   <dd className="font-medium">
                     {formatMoney(item.daily_price, organization.currency)}
                   </dd>

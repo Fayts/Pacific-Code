@@ -10,6 +10,7 @@ import {
   createClient,
   type SupabaseClient,
 } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import type {
   AvailabilityResult,
   Booking,
@@ -53,7 +54,6 @@ import type {
   Session,
   SignUpInput,
 } from "@/lib/data/repositories";
-import { canTransition, isBlockingStatus } from "@/lib/core/booking-status";
 import { computeBookingTotals } from "@/lib/core/pricing";
 
 const BLOCKING: BookingStatus[] = ["pending", "confirmed", "in_progress"];
@@ -109,12 +109,19 @@ export class SupabaseDataProvider implements DataProvider {
   private context: { userId: string; orgId: string } | null = null;
 
   constructor(client?: SupabaseClient<Database>) {
+    // Navigateur : session stockée en COOKIES (@supabase/ssr) pour que le
+    // proxy serveur puisse garder les pages. Hors navigateur : client neutre.
     this.client =
       client ??
-      createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      (typeof window !== "undefined"
+        ? createBrowserClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+        : createClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          ));
     this.client.auth.onAuthStateChange(() => {
       this.context = null;
       this.notify();
@@ -371,6 +378,7 @@ export class SupabaseDataProvider implements DataProvider {
       internal_ref: draft.internalRef || null,
       description: draft.description || null,
       daily_price: draft.dailyPrice,
+      pricing_mode: draft.pricingMode,
       deposit_amount: draft.depositAmount,
       quantity_total: draft.quantityTotal,
       min_rental_days: draft.minRentalDays,
@@ -420,6 +428,7 @@ export class SupabaseDataProvider implements DataProvider {
           internal_ref: draft.internalRef || null,
           description: draft.description || null,
           daily_price: draft.dailyPrice,
+          pricing_mode: draft.pricingMode,
           deposit_amount: draft.depositAmount,
           quantity_total: draft.quantityTotal,
           min_rental_days: draft.minRentalDays,
@@ -482,6 +491,7 @@ export class SupabaseDataProvider implements DataProvider {
         internalRef: "",
         description: source.description ?? "",
         dailyPrice: source.daily_price,
+        pricingMode: source.pricing_mode,
         depositAmount: source.deposit_amount,
         quantityTotal: source.quantity_total,
         minRentalDays: source.min_rental_days,
@@ -721,70 +731,28 @@ export class SupabaseDataProvider implements DataProvider {
     changeStatus: async (id: string, to: BookingStatus, note?: string) => {
       const ctx = await this.ensureContext();
       if (!ctx) return { ok: false, error: "Aucune organisation active" };
-      const { data: booking } = await this.client
-        .from("bookings")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (!booking) return { ok: false, error: "Réservation introuvable" };
-      const from = booking.status;
-      if (from === to) return { ok: true };
-      if (!canTransition(from, to)) {
-        return {
-          ok: false,
-          error: `Passage impossible de « ${from} » à « ${to} »`,
-        };
-      }
-
-      // La réservation devient bloquante : revérifier chaque matériel.
-      if (!isBlockingStatus(from) && isBlockingStatus(to)) {
-        const { data: items } = await this.client
-          .from("booking_items")
-          .select("equipment_id, quantity")
-          .eq("booking_id", id);
-        for (const bi of items ?? []) {
-          const availability = await this.bookings.checkAvailability({
-            equipmentId: bi.equipment_id,
-            startAtIso: booking.start_at,
-            endAtIso: booking.end_at,
-            quantity: bi.quantity,
-            excludeBookingId: id,
-          });
-          if (!availability.available) {
-            const { data: eq } = await this.client
-              .from("equipment_items")
-              .select("name")
-              .eq("id", bi.equipment_id)
-              .maybeSingle();
-            return {
-              ok: false,
-              error: `« ${eq?.name ?? "Un matériel"} » n'est plus disponible sur cette période`,
-            };
-          }
-        }
-      }
-
-      const nowIso = new Date().toISOString();
-      const patch: Partial<Booking> = { status: to };
-      if (to === "confirmed") patch.confirmed_at = nowIso;
-      if (to === "in_progress") patch.started_at = nowIso;
-      if (to === "completed") patch.completed_at = nowIso;
-      if (to === "cancelled") patch.cancelled_at = nowIso;
-
-      const { error } = await this.client
-        .from("bookings")
-        .update(patch)
-        .eq("id", id);
-      if (error) return { ok: false, error: error.message };
-
-      await this.client.from("booking_status_history").insert({
-        organization_id: booking.organization_id,
-        booking_id: id,
-        from_status: from,
-        to_status: to,
-        note: note || null,
-        changed_by: ctx.userId,
+      // Transition atomique côté SQL (verrou de ligne + machine à états +
+      // disponibilité revérifiée) : aucune course possible entre deux
+      // changements simultanés — le client n'est plus juge de rien.
+      const { error } = await this.raw.rpc("change_booking_status", {
+        p_booking_id: id,
+        p_to: to,
+        p_note: note || undefined,
       });
+      if (error) {
+        const message = error.message ?? "";
+        if (message.includes("booking not found")) {
+          return { ok: false, error: "Réservation introuvable" };
+        }
+        if (message.includes("INVALID_TRANSITION")) {
+          return {
+            ok: false,
+            error:
+              "Ce changement de statut n'est plus possible — la réservation a évolué entre-temps, rechargez la page.",
+          };
+        }
+        return { ok: false, error: this.frenchBookingError(message) };
+      }
       this.notify();
       return { ok: true };
     },
@@ -818,6 +786,7 @@ export class SupabaseDataProvider implements DataProvider {
       const totals = computeBookingTotals({
         items: source.items.map((bi) => ({
           dailyPrice: bi.equipment?.daily_price ?? 0,
+          pricingMode: bi.equipment?.pricing_mode ?? "daily",
           quantity: bi.quantity,
         })),
         durationDays: source.duration_days,
@@ -857,13 +826,14 @@ export class SupabaseDataProvider implements DataProvider {
     const ids = draft.items.map((i) => i.equipmentId);
     const { data: equipment } = await this.client
       .from("equipment_items")
-      .select("id, daily_price")
+      .select("id, daily_price, pricing_mode")
       .in("id", ids);
-    const priceById = new Map((equipment ?? []).map((e) => [e.id, e.daily_price]));
+    const byId = new Map((equipment ?? []).map((e) => [e.id, e]));
     return draft.items.map((item, index) => ({
       equipment_id: item.equipmentId,
       quantity: item.quantity,
-      daily_price: priceById.get(item.equipmentId) ?? 0,
+      daily_price: byId.get(item.equipmentId)?.daily_price ?? 0,
+      pricing_mode: byId.get(item.equipmentId)?.pricing_mode ?? "daily",
       line_total: lineTotals[index] ?? 0,
     }));
   }

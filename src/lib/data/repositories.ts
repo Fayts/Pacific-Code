@@ -20,6 +20,7 @@ import type {
   EquipmentStatus,
   Organization,
   PaymentStatus,
+  PricingMode,
   AvailabilityResult,
   BusinessType,
 } from "@/lib/types/database";
@@ -66,6 +67,8 @@ export type EquipmentDraft = {
   internalRef: string;
   description: string;
   dailyPrice: number;
+  /** "daily" : prix × durée ; "flat" : forfait fixe. */
+  pricingMode: PricingMode;
   depositAmount: number;
   quantityTotal: number;
   minRentalDays: number;

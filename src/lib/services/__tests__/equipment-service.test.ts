@@ -26,6 +26,7 @@ const VALID_INPUT: EquipmentInput = {
   internalRef: "TST-001",
   description: "Machine de test",
   dailyPrice: 5000,
+  pricingMode: "daily",
   depositAmount: 20000,
   quantityTotal: 2,
   minRentalDays: 1,

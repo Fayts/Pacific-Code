@@ -137,7 +137,7 @@ export function PublicCatalogClient() {
                       <div className="mt-3 flex items-baseline justify-between">
                         <p className="text-lg font-semibold text-primary">
                           {item.daily_price > 0
-                            ? `${formatMoney(item.daily_price, organization?.currency ?? "XPF")} / jour`
+                            ? `${formatMoney(item.daily_price, organization?.currency ?? "XPF")}${item.pricing_mode === "flat" ? " forfait" : " / jour"}`
                             : "Prix sur demande"}
                         </p>
                         {item.deposit_amount > 0 && (

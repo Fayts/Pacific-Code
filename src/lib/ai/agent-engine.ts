@@ -49,7 +49,13 @@ export type AgentPeriod = {
 export type AgentAnalysis = {
   intent: AgentIntent;
   complexity: "simple" | "complex";
-  equipment: { id: string; name: string; dailyPrice: number; deposit: number } | null;
+  equipment: {
+    id: string;
+    name: string;
+    dailyPrice: number;
+    pricingMode: "daily" | "flat";
+    deposit: number;
+  } | null;
   /** Autres matériels plausibles (ambiguïté ou suggestion). */
   candidates: { id: string; name: string }[];
   period: AgentPeriod | null;
@@ -415,7 +421,13 @@ export async function analyzeConversation(
       availableQuantity: result.available_quantity,
     };
     const totals = computeBookingTotals({
-      items: [{ dailyPrice: equipmentRow.daily_price, quantity: 1 }],
+      items: [
+        {
+          dailyPrice: equipmentRow.daily_price,
+          pricingMode: equipmentRow.pricing_mode,
+          quantity: 1,
+        },
+      ],
       durationDays,
     });
     pricing = { total: totals.total, deposit: equipmentRow.deposit_amount };
@@ -480,7 +492,9 @@ export async function analyzeConversation(
   } else if (intent === "price_question" && equipmentRow) {
     // Question de tarif : toujours donner le prix, puis l'état de dispo.
     paragraphs.push(
-      `Le ${equipmentRow.name} est à ${money(equipmentRow.daily_price)} la journée, avec une caution de ${money(equipmentRow.deposit_amount)}.`
+      equipmentRow.pricing_mode === "flat"
+        ? `Le ${equipmentRow.name} est au forfait de ${money(equipmentRow.daily_price)}, avec une caution de ${money(equipmentRow.deposit_amount)}.`
+        : `Le ${equipmentRow.name} est à ${money(equipmentRow.daily_price)} la journée, avec une caution de ${money(equipmentRow.deposit_amount)}.`
     );
     if (availability && period) {
       if (availability.available) {
@@ -536,7 +550,9 @@ export async function analyzeConversation(
     }
   } else if (intent === "availability_question" && equipmentRow) {
     paragraphs.push(
-      `Le ${equipmentRow.name} est à ${money(equipmentRow.daily_price)} la journée, avec une caution de ${money(equipmentRow.deposit_amount)}.`
+      equipmentRow.pricing_mode === "flat"
+        ? `Le ${equipmentRow.name} est au forfait de ${money(equipmentRow.daily_price)}, avec une caution de ${money(equipmentRow.deposit_amount)}.`
+        : `Le ${equipmentRow.name} est à ${money(equipmentRow.daily_price)} la journée, avec une caution de ${money(equipmentRow.deposit_amount)}.`
     );
     if (equipmentRow.status === "maintenance") {
       paragraphs.push(
@@ -599,6 +615,7 @@ export async function analyzeConversation(
           id: equipmentRow.id,
           name: equipmentRow.name,
           dailyPrice: equipmentRow.daily_price,
+          pricingMode: equipmentRow.pricing_mode,
           deposit: equipmentRow.deposit_amount,
         }
       : null,

@@ -39,6 +39,8 @@ export type ParsedItem = {
   quantity: number;
   /** null = non détecté : jamais de prix inventé. */
   dailyPrice: number | null;
+  /** "daily" : prix × durée ; "flat" : forfait (prestation, prix fixe). */
+  pricingMode: "daily" | "flat";
   depositAmount: number | null;
   minRentalDays: number;
   internalRef: string;

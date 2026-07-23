@@ -102,6 +102,7 @@ export function runDevAgent(
           tracking: item.tracking,
           quantity: item.quantity,
           dailyPrice: item.dailyPrice ?? undefined,
+          pricingMode: item.pricingMode,
           deposit: item.depositAmount ?? undefined,
           priceConfidence: item.dailyPrice !== null ? "probable" : "missing",
         },

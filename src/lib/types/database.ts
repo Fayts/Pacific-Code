@@ -23,6 +23,9 @@ export type CustomerType = "individual" | "company";
 
 export type EquipmentStatus = "available" | "maintenance" | "unavailable";
 
+/** Tarification : par jour (× durée) ou au forfait (prix fixe). */
+export type PricingMode = "daily" | "flat";
+
 export type BookingStatus =
   | "draft"
   | "pending"
@@ -188,6 +191,7 @@ export type Database = {
           internal_ref: string | null;
           description: string | null;
           daily_price: number;
+          pricing_mode: PricingMode;
           deposit_amount: number;
           quantity_total: number;
           min_rental_days: number;
@@ -207,6 +211,7 @@ export type Database = {
           internal_ref?: string | null;
           description?: string | null;
           daily_price?: number;
+          pricing_mode?: PricingMode;
           deposit_amount?: number;
           quantity_total?: number;
           min_rental_days?: number;
@@ -226,6 +231,7 @@ export type Database = {
           internal_ref?: string | null;
           description?: string | null;
           daily_price?: number;
+          pricing_mode?: PricingMode;
           deposit_amount?: number;
           quantity_total?: number;
           min_rental_days?: number;
@@ -462,6 +468,7 @@ export type Database = {
           equipment_id: string;
           quantity: number;
           daily_price: number;
+          pricing_mode: PricingMode;
           line_total: number;
           created_at: string;
         };
@@ -472,6 +479,7 @@ export type Database = {
           equipment_id: string;
           quantity?: number;
           daily_price?: number;
+          pricing_mode?: PricingMode;
           line_total?: number;
           created_at?: string;
         };
@@ -482,6 +490,7 @@ export type Database = {
           equipment_id?: string;
           quantity?: number;
           daily_price?: number;
+          pricing_mode?: PricingMode;
           line_total?: number;
           created_at?: string;
         };

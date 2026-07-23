@@ -115,6 +115,7 @@ export function parseCatalogText(input: string): TextParseResult {
       tracking: inferred?.individual && quantity > 1 ? "individual" : "stock",
       quantity,
       dailyPrice: price,
+      pricingMode: "daily",
       depositAmount: null,
       minRentalDays: 1,
       internalRef: "",

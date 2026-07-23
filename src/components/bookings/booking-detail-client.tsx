@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Mail, Phone } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, Mail, Phone, Receipt } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
 import type { BookingWithRelations } from "@/lib/data/repositories";
 import type { BookingStatusHistory } from "@/lib/types/database";
@@ -49,6 +49,7 @@ import {
 } from "@/components/shared/status-badge";
 import { BookingActions } from "@/components/bookings/booking-actions";
 import { PaymentDepositControls } from "@/components/bookings/payment-deposit-controls";
+import { Button } from "@/components/ui/button";
 
 type DetailData = {
   booking: BookingWithRelations | null;
@@ -137,11 +138,41 @@ export function BookingDetailClient({ id }: { id: string }) {
             Créée le {formatDateTime(booking.created_at, tz)}
           </p>
         </div>
-        <BookingActions
-          bookingId={booking.id}
-          status={booking.status}
-          editable={isEditableStatus(booking.status)}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            render={
+              <a
+                href={`/print/bookings/${booking.id}/contract`}
+                target="_blank"
+                rel="noopener"
+              />
+            }
+          >
+            <FileText className="size-4" aria-hidden />
+            Contrat
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            render={
+              <a
+                href={`/print/bookings/${booking.id}/invoice`}
+                target="_blank"
+                rel="noopener"
+              />
+            }
+          >
+            <Receipt className="size-4" aria-hidden />
+            Facture
+          </Button>
+          <BookingActions
+            bookingId={booking.id}
+            status={booking.status}
+            editable={isEditableStatus(booking.status)}
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
@@ -162,7 +193,7 @@ export function BookingDetailClient({ id }: { id: string }) {
                     <TableRow>
                       <TableHead>Matériel</TableHead>
                       <TableHead className="text-right">Qté</TableHead>
-                      <TableHead className="text-right">Prix / jour</TableHead>
+                      <TableHead className="text-right">Prix</TableHead>
                       <TableHead className="text-right">Jours</TableHead>
                       <TableHead className="text-right">Total ligne</TableHead>
                     </TableRow>
@@ -178,9 +209,14 @@ export function BookingDetailClient({ id }: { id: string }) {
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatMoney(item.daily_price, currency)}
+                          {item.pricing_mode === "flat" && (
+                            <span className="text-muted-foreground"> forfait</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {booking.duration_days}
+                          {item.pricing_mode === "flat"
+                            ? "—"
+                            : booking.duration_days}
                         </TableCell>
                         <TableCell className="text-right font-medium tabular-nums">
                           {formatMoney(item.line_total, currency)}

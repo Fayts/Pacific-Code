@@ -81,6 +81,7 @@ export type ImportField =
   | "description"
   | "quantity"
   | "dailyPrice"
+  | "pricingMode"
   | "depositAmount"
   | "minRentalDays"
   | "notes"
@@ -92,7 +93,8 @@ export const FIELD_LABELS: Record<ImportField, string> = {
   internalRef: "Référence interne",
   description: "Description",
   quantity: "Quantité",
-  dailyPrice: "Prix journalier",
+  dailyPrice: "Prix (par jour ou forfait)",
+  pricingMode: "Tarification (jour / forfait)",
   depositAmount: "Caution",
   minRentalDays: "Durée minimale (jours)",
   notes: "Remarques",
@@ -105,6 +107,9 @@ const FIELD_SYNONYMS: Record<Exclude<ImportField, "ignore">, string[]> = {
   internalRef: ["reference", "référence", "ref", "réf", "sku", "code", "immatriculation"],
   description: ["description", "détail", "detail", "descriptif"],
   quantity: ["quantite", "quantité", "qte", "qté", "stock", "nombre", "unités", "unites", "qty"],
+  // AVANT dailyPrice : « tarification » contient « tarif » et serait sinon
+  // absorbé par la colonne de prix.
+  pricingMode: ["tarification", "type de tarif", "type tarif", "mode de tarif", "forfait ou jour", "facturation"],
   dailyPrice: ["prix journalier", "prix jour", "prix/jour", "tarif journalier", "tarif jour", "prix par jour", "prix", "tarif", "daily"],
   depositAmount: ["caution", "depot", "dépôt", "garantie", "deposit"],
   minRentalDays: ["duree minimale", "durée minimale", "jours min", "duree min", "durée min", "min jours"],
@@ -150,6 +155,10 @@ export function rowsToItems(
     return i === -1 ? "" : (row[i] ?? "").trim();
   };
 
+  // « forfait », « fixe », « prestation », « flat » → forfait ; sinon par jour.
+  const parsePricingMode = (value: string): "daily" | "flat" =>
+    /forfait|fixe|prestation|flat/i.test(value) ? "flat" : "daily";
+
   return table.rows.slice(0, MAX_CSV_ROWS).map((row) => {
     const price = parsePrice(get(row, "dailyPrice"));
     const deposit = parsePrice(get(row, "depositAmount"));
@@ -162,6 +171,7 @@ export function rowsToItems(
       tracking: "stock",
       quantity,
       dailyPrice: price,
+      pricingMode: parsePricingMode(get(row, "pricingMode")),
       depositAmount: deposit,
       minRentalDays: minDays,
       internalRef: get(row, "internalRef"),

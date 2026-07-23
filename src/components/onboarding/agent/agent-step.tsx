@@ -124,7 +124,7 @@ export function AgentStep({
   /** « attach » : accueil orienté brochure/photo (carte PDF du sélecteur). */
   initialHint?: "attach";
 }) {
-  const { session } = useAppData();
+  const { provider, session } = useAppData();
   const reduce = useReducedMotion();
   const userId = session?.user.id ?? null;
 
@@ -268,9 +268,14 @@ export function AgentStep({
       }
 
       try {
+        // Mode réel : l'appel est authentifié (quota IA par organisation).
+        const accessToken = (await provider.getAccessToken?.()) ?? null;
         const response = await fetch("/api/onboarding/agent", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
           body: JSON.stringify({
             message: text || ATTACH_ONLY_MESSAGE,
             draft,
@@ -324,7 +329,7 @@ export function AgentStep({
         setAnalyzingDoc(false);
       }
     },
-    [attachments, busy, loaded, messages, draft, persist, pushUndo, tab]
+    [attachments, busy, loaded, messages, draft, persist, provider, pushUndo, tab]
   );
 
   const addFiles = useCallback(

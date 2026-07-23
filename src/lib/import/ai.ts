@@ -22,6 +22,7 @@ function toParsedItems(items: AiParseResult["items"]): ParsedItem[] {
     tracking: item.tracking,
     quantity: item.quantity,
     dailyPrice: item.dailyPrice,
+    pricingMode: item.pricingMode,
     depositAmount: item.depositAmount,
     minRentalDays: 1,
     internalRef: "",

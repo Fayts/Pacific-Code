@@ -182,7 +182,7 @@ function ItemCard({
               <span className="font-semibold text-foreground">
                 {formatXpf(item.dailyPrice)}
               </span>
-              /jour
+              {item.pricingMode === "flat" ? " forfait" : "/jour"}
               {item.priceConfidence === "verify" && " · à confirmer"}
             </>
           ) : item.hourlyPrice !== null || item.weeklyPrice !== null ? (

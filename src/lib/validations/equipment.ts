@@ -7,8 +7,10 @@ export const equipmentSchema = z.object({
   description: z.string().trim().max(5000).optional().or(z.literal("")),
   dailyPrice: z.coerce
     .number()
-    .min(0, "Le prix journalier ne peut pas être négatif")
+    .min(0, "Le prix ne peut pas être négatif")
     .max(99_999_999),
+  /** "daily" : prix × durée ; "flat" : forfait, quelle que soit la durée. */
+  pricingMode: z.enum(["daily", "flat"]).default("daily"),
   depositAmount: z.coerce
     .number()
     .min(0, "La caution ne peut pas être négative")

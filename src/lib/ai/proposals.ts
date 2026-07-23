@@ -20,6 +20,7 @@ export const bookingProposalSchema = z.object({
         equipmentName: z.string(),
         quantity: z.number(),
         dailyPrice: z.number(),
+        pricingMode: z.enum(["daily", "flat"]).optional(),
       })
     ),
     startAt: z.string(),

@@ -230,7 +230,7 @@ export function EquipmentListClient() {
                   <TableHead className="w-14 pl-3">Photo</TableHead>
                   <TableHead>Matériel</TableHead>
                   <TableHead>Catégorie</TableHead>
-                  <TableHead className="text-right">Prix / jour</TableHead>
+                  <TableHead className="text-right">Prix</TableHead>
                   <TableHead className="text-right">Caution</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Prochaine dispo</TableHead>
@@ -262,6 +262,9 @@ export function EquipmentListClient() {
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMoney(item.daily_price, organization.currency)}
+                      <span className="font-normal text-muted-foreground">
+                        {item.pricing_mode === "flat" ? " forfait" : " / jour"}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {formatMoney(item.deposit_amount, organization.currency)}
@@ -309,7 +312,9 @@ export function EquipmentListClient() {
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                     <span className="font-medium">
                       {formatMoney(item.daily_price, organization.currency)}
-                      <span className="font-normal text-muted-foreground"> / jour</span>
+                      <span className="font-normal text-muted-foreground">
+                        {item.pricing_mode === "flat" ? " forfait" : " / jour"}
+                      </span>
                     </span>
                     <span className="text-muted-foreground">
                       Caution{" "}

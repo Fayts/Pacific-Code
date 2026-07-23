@@ -104,6 +104,7 @@ export function applyDraftToSession(
       tracking: item.tracking,
       quantity: item.quantity,
       dailyPrice: item.dailyPrice,
+      pricingMode: item.pricingMode,
       depositAmount: item.deposit,
       minRentalDays: draft.bookingRules.minimumDurationDays ?? 1,
       internalRef: "",

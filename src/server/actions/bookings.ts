@@ -54,6 +54,7 @@ type EquipmentRow = Pick<
   | "id"
   | "name"
   | "daily_price"
+  | "pricing_mode"
   | "deposit_amount"
   | "quantity_total"
   | "min_rental_days"
@@ -69,7 +70,7 @@ async function fetchOrgEquipment(
   const { data } = await supabase
     .from("equipment_items")
     .select(
-      "id, name, daily_price, deposit_amount, quantity_total, min_rental_days, status, archived_at"
+      "id, name, daily_price, pricing_mode, deposit_amount, quantity_total, min_rental_days, status, archived_at"
     )
     .eq("organization_id", organizationId)
     .in("id", equipmentIds);
@@ -209,6 +210,7 @@ export async function createBooking(
   const totals = computeBookingTotals({
     items: parsed.data.items.map((i) => ({
       dailyPrice: equipmentById.get(i.equipmentId)!.daily_price,
+      pricingMode: equipmentById.get(i.equipmentId)!.pricing_mode,
       quantity: i.quantity,
     })),
     durationDays,
@@ -220,6 +222,7 @@ export async function createBooking(
     equipment_id: i.equipmentId,
     quantity: i.quantity,
     daily_price: equipmentById.get(i.equipmentId)!.daily_price,
+    pricing_mode: equipmentById.get(i.equipmentId)!.pricing_mode,
     line_total: totals.lineTotals[index],
   }));
 
@@ -331,6 +334,7 @@ export async function updateBooking(
   const totals = computeBookingTotals({
     items: parsed.data.items.map((i) => ({
       dailyPrice: equipmentById.get(i.equipmentId)!.daily_price,
+      pricingMode: equipmentById.get(i.equipmentId)!.pricing_mode,
       quantity: i.quantity,
     })),
     durationDays,
@@ -342,6 +346,7 @@ export async function updateBooking(
     equipment_id: i.equipmentId,
     quantity: i.quantity,
     daily_price: equipmentById.get(i.equipmentId)!.daily_price,
+    pricing_mode: equipmentById.get(i.equipmentId)!.pricing_mode,
     line_total: totals.lineTotals[index],
   }));
 
@@ -578,11 +583,13 @@ export async function duplicateBooking(
       equipment_id: string;
       quantity: number;
       daily_price: number;
+      pricing_mode: "daily" | "flat";
       line_total: number;
     }) => ({
       equipment_id: i.equipment_id,
       quantity: i.quantity,
       daily_price: i.daily_price,
+      pricing_mode: i.pricing_mode,
       line_total: i.line_total,
     })
   );

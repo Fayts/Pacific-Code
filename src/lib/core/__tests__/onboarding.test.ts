@@ -40,6 +40,7 @@ function item(patch: Partial<EquipmentItem> = {}): EquipmentItem {
     internal_ref: null,
     description: null,
     daily_price: 1000,
+    pricing_mode: "daily",
     deposit_amount: 0,
     quantity_total: 1,
     min_rental_days: 1,

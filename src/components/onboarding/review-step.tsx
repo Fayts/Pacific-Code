@@ -46,6 +46,11 @@ const TRACKING_ITEMS = [
   { value: "individual", label: "Fiches individuelles" },
 ];
 
+const PRICING_ITEMS = [
+  { value: "daily", label: "Par jour" },
+  { value: "flat", label: "Forfait" },
+];
+
 const DUPLICATE_ITEMS = [
   { value: "create", label: "Créer malgré tout" },
   { value: "skip", label: "Ignorer cette ligne" },
@@ -135,6 +140,7 @@ export function ReviewStep({
       tracking: "stock",
       quantity: 1,
       dailyPrice: null,
+      pricingMode: "daily",
       depositAmount: null,
       minRentalDays: 1,
       internalRef: "",
@@ -234,9 +240,32 @@ export function ReviewStep({
                     className="mt-1"
                   />
                 </div>
+                <div className="w-32">
+                  <Label className="text-xs text-muted-foreground">Tarif</Label>
+                  <Select
+                    items={PRICING_ITEMS}
+                    value={item.pricingMode}
+                    onValueChange={(v) =>
+                      updateItem(item.id, {
+                        pricingMode: v as ParsedItem["pricingMode"],
+                      })
+                    }
+                  >
+                    <SelectTrigger className="mt-1 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRICING_ITEMS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="w-28">
                   <Label className="text-xs text-muted-foreground">
-                    Prix / jour
+                    {item.pricingMode === "flat" ? "Prix forfait" : "Prix / jour"}
                   </Label>
                   <Input
                     inputMode="numeric"

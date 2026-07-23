@@ -38,7 +38,7 @@ function bookingInput(overrides: Record<string, unknown> = {}) {
 describe("MockDataProvider — seed et persistance", () => {
   it("charge le jeu de données fictif Pacific Rent&Clean", async () => {
     const provider = makeProvider();
-    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(4);
+    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(5);
     expect((await provider.customers.list()).length).toBe(3);
     expect((await provider.bookings.list()).length).toBe(5);
     expect((await provider.organization.get())!.name).toBe("Pacific Rent&Clean");
@@ -72,6 +72,7 @@ describe("MockDataProvider — seed et persistance", () => {
       internalRef: "",
       description: "",
       dailyPrice: 1000,
+      pricingMode: "daily",
       depositAmount: 0,
       quantityTotal: 1,
       minRentalDays: 1,
@@ -80,7 +81,7 @@ describe("MockDataProvider — seed et persistance", () => {
       internalNotes: "",
     });
     await provider.resetDemoData();
-    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(4);
+    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(5);
     expect(await provider.auth.getSession()).not.toBeNull();
   });
 });

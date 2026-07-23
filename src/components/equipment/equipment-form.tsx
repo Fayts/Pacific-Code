@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import { toast } from "sonner";
@@ -38,6 +38,10 @@ type EquipmentFormValues = z.input<typeof equipmentSchema>;
 
 const NO_CATEGORY = "none";
 const STATUS_OPTIONS: EquipmentStatus[] = ["available", "maintenance", "unavailable"];
+const PRICING_MODE_ITEMS = [
+  { value: "daily", label: "Par jour" },
+  { value: "flat", label: "Forfait (prix fixe)" },
+];
 
 type EquipmentFormProps = {
   categories: { id: string; name: string }[];
@@ -71,6 +75,7 @@ export function EquipmentForm({
           internalRef: equipment.internal_ref ?? "",
           description: equipment.description ?? "",
           dailyPrice: equipment.daily_price,
+          pricingMode: equipment.pricing_mode,
           depositAmount: equipment.deposit_amount,
           quantityTotal: equipment.quantity_total,
           minRentalDays: equipment.min_rental_days,
@@ -84,6 +89,7 @@ export function EquipmentForm({
           internalRef: "",
           description: "",
           dailyPrice: 0,
+          pricingMode: "daily",
           depositAmount: 0,
           quantityTotal: 1,
           minRentalDays: 1,
@@ -92,6 +98,8 @@ export function EquipmentForm({
           internalNotes: "",
         },
   });
+
+  const pricingMode = useWatch({ control, name: "pricingMode" });
 
   const categoryItems = useMemo(
     () => ({
@@ -234,7 +242,42 @@ export function EquipmentForm({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="dailyPrice">Prix journalier ({currency})</Label>
+            <Label>Tarification</Label>
+            <Controller
+              control={control}
+              name="pricingMode"
+              render={({ field }) => (
+                <Select
+                  items={PRICING_MODE_ITEMS}
+                  value={field.value ?? "daily"}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRICING_MODE_ITEMS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              {pricingMode === "flat"
+                ? "Prix fixe, quelle que soit la durée (prestation, service)."
+                : "Le prix se multiplie par le nombre de jours."}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dailyPrice">
+              {pricingMode === "flat"
+                ? `Prix forfaitaire (${currency})`
+                : `Prix journalier (${currency})`}
+            </Label>
             <Input
               id="dailyPrice"
               type="number"

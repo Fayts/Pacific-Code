@@ -9,6 +9,8 @@ export const aiParsedItemSchema = z.object({
   quantity: z.number().int().min(1).max(10_000).default(1),
   tracking: z.enum(["stock", "individual"]).default("stock"),
   dailyPrice: z.number().min(0).max(99_999_999).nullable().default(null),
+  /** "daily" : prix par jour ; "flat" : forfait / prestation à prix fixe. */
+  pricingMode: z.enum(["daily", "flat"]).default("daily"),
   depositAmount: z.number().min(0).max(99_999_999).nullable().default(null),
   description: z.string().trim().max(5000).default(""),
   priceConfidence: z.enum(["detected", "probable", "missing"]).default("detected"),

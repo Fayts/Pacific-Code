@@ -23,9 +23,9 @@ import type {
 } from "@/lib/types/inbox";
 import type { SessionUser } from "@/lib/data/repositories";
 
-// v2 : ajout de l'agent IA commercial (canaux, boîte de réception, réglages).
-// Un document localStorage d'une version antérieure est re-seedé.
-export const MOCK_DB_VERSION = 2;
+// v3 : tarification par jour ou au forfait (pricing_mode) + prestation
+// de démonstration. Un document localStorage antérieur est re-seedé.
+export const MOCK_DB_VERSION = 3;
 
 // IDs stables (format UUID pour rester compatibles avec les validations zod).
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -33,10 +33,12 @@ export const DEMO_USER_ID = "22222222-2222-4222-8222-222222222222";
 const CAT_INJECTEUR = "31111111-1111-4111-8111-111111111111";
 const CAT_PACK = "32222222-2222-4222-8222-222222222222";
 const CAT_HP = "33333333-3333-4333-8333-333333333333";
+const CAT_PRESTA = "34444444-4444-4444-8444-444444444444";
 export const EQ_PUZZI10 = "41111111-1111-4111-8111-111111111111";
 export const EQ_PUZZI8 = "42222222-2222-4222-8222-222222222222";
 export const EQ_PACK = "43333333-3333-4333-8333-333333333333";
 export const EQ_K5 = "44444444-4444-4444-8444-444444444444";
+export const EQ_PRESTA_MATELAS = "45555555-5555-4555-8555-555555555555";
 export const CUST_JEAN = "51111111-1111-4111-8111-111111111111";
 export const CUST_MOANA = "52222222-2222-4222-8222-222222222222";
 export const CUST_HOTEL = "53333333-3333-4333-8333-333333333333";
@@ -127,10 +129,19 @@ export function buildSeed(now: Date = new Date()): MockDb {
       created_at: created,
       updated_at: created,
     },
+    {
+      id: CAT_PRESTA,
+      organization_id: ORG_ID,
+      name: "Prestations de nettoyage",
+      description: "Nettoyage effectué par nos soins, au forfait",
+      created_at: created,
+      updated_at: created,
+    },
   ];
 
   const equipmentDefaults = {
     organization_id: ORG_ID,
+    pricing_mode: "daily" as const,
     created_by: DEMO_USER_ID,
     created_at: created,
     updated_at: created,
@@ -205,6 +216,23 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions:
         "Purger l'eau après chaque utilisation. Ne jamais utiliser d'eau de mer.",
       internal_notes: "Données fictives — joint haute pression à remplacer.",
+    },
+    {
+      ...equipmentDefaults,
+      id: EQ_PRESTA_MATELAS,
+      category_id: CAT_PRESTA,
+      name: "Nettoyage matelas (prestation)",
+      internal_ref: "PR-MAT",
+      description:
+        "Nettoyage en profondeur d'un matelas par nos soins : injection-extraction, détachage et désodorisation. Prix au forfait, par matelas.",
+      daily_price: 5000,
+      pricing_mode: "flat",
+      deposit_amount: 0,
+      quantity_total: 10,
+      min_rental_days: 1,
+      status: "available",
+      usage_instructions: "",
+      internal_notes: "Données fictives — forfait, ne dépend pas de la durée.",
     },
   ];
 
@@ -384,6 +412,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
     equipment_id: equipmentId,
     quantity: 1,
     daily_price: dailyPrice,
+    pricing_mode: "daily",
     line_total: lineTotal,
     created_at: created,
   });

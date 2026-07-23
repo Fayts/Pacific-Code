@@ -18,6 +18,7 @@ export type EquipmentOption = Pick<
   | "id"
   | "name"
   | "daily_price"
+  | "pricing_mode"
   | "deposit_amount"
   | "quantity_total"
   | "min_rental_days"
