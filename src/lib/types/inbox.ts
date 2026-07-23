@@ -83,6 +83,10 @@ export type AgentSettings = {
    */
   practical_info: string;
   permissions: AgentPermissions;
+  /** Alerte email à chaque nouveau message client (anti-rafale 30 min). */
+  notify_new_messages: boolean;
+  /** Adresse des alertes — null = l'adresse du compte email connecté. */
+  notify_email: string | null;
   activated_at: string | null;
   updated_at: string;
 };

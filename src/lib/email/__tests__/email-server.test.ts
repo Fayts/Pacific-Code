@@ -3,6 +3,7 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 import {
+  buildGmailNewMessageMime,
   buildGmailReplyMime,
   extractGmailBody,
   htmlToText,
@@ -176,6 +177,23 @@ describe("extractGmailBody", () => {
       extractGmailBody({ mimeType: "text/plain", body: { data: b64("Direct") } })
     ).toBe("Direct");
     expect(extractGmailBody(undefined)).toBe("");
+  });
+});
+
+describe("buildGmailNewMessageMime (notifications)", () => {
+  it("construit un message neuf, sujet accentué encodé, corps en base64", () => {
+    const mime = buildGmailNewMessageMime({
+      to: "loueur@gmail.com",
+      subject: "Jean vous a écrit (Messenger) — Pacific Code",
+      body: "Message : bonjour, le Kärcher est-il libre ?\nRépondre : https://exemple.pf/inbox?c=x",
+    });
+    expect(mime).toContain("To: loueur@gmail.com");
+    expect(mime).toContain("Subject: =?UTF-8?B?"); // sujet non-ASCII encodé
+    expect(mime).not.toContain("In-Reply-To"); // message neuf, pas une réponse
+    const bodyB64 = mime.split("\r\n\r\n")[1];
+    expect(Buffer.from(bodyB64, "base64").toString("utf8")).toContain(
+      "Kärcher est-il libre"
+    );
   });
 });
 

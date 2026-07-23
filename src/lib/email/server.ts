@@ -585,6 +585,68 @@ export async function sendGmailReply(
   }
 }
 
+/** Message MIME d'un email NEUF (notifications au loueur). */
+export function buildGmailNewMessageMime(input: {
+  to: string;
+  subject: string;
+  body: string;
+}): string {
+  return [
+    `To: ${input.to}`,
+    `Subject: ${encodeHeader(input.subject.trim() || "Notification")}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    Buffer.from(input.body, "utf8").toString("base64"),
+  ].join("\r\n");
+}
+
+export async function sendGmailNewMessage(
+  accessToken: string,
+  input: { to: string; subject: string; body: string }
+): Promise<void> {
+  const raw = Buffer.from(buildGmailNewMessageMime(input), "utf8").toString(
+    "base64url"
+  );
+  const response = await fetch(`${GMAIL}/messages/send`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ raw }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Gmail ${response.status} : ${text.slice(0, 300)}`);
+  }
+}
+
+export async function sendOutlookNewMessage(
+  accessToken: string,
+  input: { to: string; subject: string; body: string }
+): Promise<void> {
+  const response = await fetch(`${GRAPH}/me/sendMail`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        toRecipients: [{ emailAddress: { address: input.to } }],
+        subject: input.subject,
+        body: { contentType: "text", content: input.body },
+      },
+    }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Outlook ${response.status} : ${text.slice(0, 300)}`);
+  }
+}
+
 export async function sendOutlookReply(
   accessToken: string,
   input: { messageId: string; body: string }

@@ -14,6 +14,7 @@ import {
   type EmailProvider,
 } from "@/lib/email/server";
 import { createAnonClient, rawRpc } from "@/lib/supabase/token-client";
+import { notifyInboundMessage } from "@/lib/notifications/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
 
       let ingested = 0;
       for (const message of messages) {
-        const { error: ingestError } = await rawRpc(
+        const { data: conversationId, error: ingestError } = await rawRpc(
           supabase,
           "ingest_email_message",
           {
@@ -120,6 +121,15 @@ export async function POST(request: NextRequest) {
           console.error("[email/poll] ingest error:", ingestError.message);
         } else {
           ingested += 1;
+          if (typeof conversationId === "string") {
+            // Alerte email au loueur (anti-rafale côté SQL, jamais bloquant).
+            await notifyInboundMessage({
+              supabase,
+              secret,
+              conversationId,
+              snippet: message.body,
+            });
+          }
         }
       }
 

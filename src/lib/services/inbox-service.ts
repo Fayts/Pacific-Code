@@ -53,6 +53,14 @@ const settingsSchema = z.object({
       send_form: z.boolean().optional(),
     })
     .optional(),
+  notify_new_messages: z.boolean().optional(),
+  notify_email: z
+    .string()
+    .trim()
+    .email("Adresse email invalide")
+    .max(200)
+    .nullable()
+    .optional(),
   activated_at: z.string().nullable().optional(),
 });
 

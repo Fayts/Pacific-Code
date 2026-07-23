@@ -16,6 +16,7 @@ import {
   webhookIngestSecret,
 } from "@/lib/messenger/server";
 import { createAnonClient, rawRpc } from "@/lib/supabase/token-client";
+import { notifyInboundMessage } from "@/lib/notifications/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -93,15 +94,27 @@ export async function POST(request: NextRequest) {
         ? await fetchSenderName(pageToken, psid)
         : "";
 
-      const { error } = await rawRpc(supabase, "ingest_messenger_message", {
-        p_secret: secret,
-        p_page_id: pageId,
-        p_sender_psid: psid,
-        p_sender_name: senderName,
-        p_text: text,
-      });
+      const { data: conversationId, error } = await rawRpc(
+        supabase,
+        "ingest_messenger_message",
+        {
+          p_secret: secret,
+          p_page_id: pageId,
+          p_sender_psid: psid,
+          p_sender_name: senderName,
+          p_text: text,
+        }
+      );
       if (error) {
         console.error("messenger ingest error:", error.message);
+      } else if (typeof conversationId === "string") {
+        // Alerte email au loueur (anti-rafale côté SQL, jamais bloquant).
+        await notifyInboundMessage({
+          supabase,
+          secret,
+          conversationId,
+          snippet: text,
+        });
       }
     }
   }

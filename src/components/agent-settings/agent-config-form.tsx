@@ -5,7 +5,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Bot, ShieldCheck } from "lucide-react";
+import { BellRing, Bot, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -65,6 +65,10 @@ export function AgentConfigForm({ settings }: { settings: AgentSettings }) {
   const [signature, setSignature] = useState(settings.signature);
   const [practicalInfo, setPracticalInfo] = useState(settings.practical_info);
   const [permissions, setPermissions] = useState(settings.permissions);
+  const [notifyEnabled, setNotifyEnabled] = useState(
+    settings.notify_new_messages
+  );
+  const [notifyEmail, setNotifyEmail] = useState(settings.notify_email ?? "");
 
   const save = () => {
     startTransition(async () => {
@@ -75,6 +79,8 @@ export function AgentConfigForm({ settings }: { settings: AgentSettings }) {
           signature,
           practical_info: practicalInfo,
           permissions,
+          notify_new_messages: notifyEnabled,
+          notify_email: notifyEmail.trim() || null,
         },
         provider
       );
@@ -144,6 +150,46 @@ export function AgentConfigForm({ settings }: { settings: AgentSettings }) {
                 setMode(checked ? "auto" : "assisted")
               }
             />
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Label
+                  htmlFor="agent-notify"
+                  className="flex items-center gap-1.5"
+                >
+                  <BellRing className="size-4 text-primary" aria-hidden />
+                  Alerte email à chaque nouveau message
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Un client vous écrit (Messenger, formulaire…) : vous recevez
+                  un email avec un lien direct pour répondre. Au plus une
+                  alerte par conversation toutes les 30 minutes. Envoyée via
+                  votre compte email connecté.
+                </p>
+              </div>
+              <Switch
+                id="agent-notify"
+                checked={notifyEnabled}
+                onCheckedChange={setNotifyEnabled}
+              />
+            </div>
+            {notifyEnabled && (
+              <div className="space-y-1.5">
+                <Label htmlFor="agent-notify-email" className="text-xs">
+                  Adresse des alertes (vide = votre compte connecté)
+                </Label>
+                <Input
+                  id="agent-notify-email"
+                  type="email"
+                  value={notifyEmail}
+                  onChange={(event) => setNotifyEmail(event.target.value)}
+                  placeholder="ex. mon-portable@gmail.com"
+                  maxLength={200}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -23,9 +23,9 @@ import type {
 } from "@/lib/types/inbox";
 import type { SessionUser } from "@/lib/data/repositories";
 
-// v3 : tarification par jour ou au forfait (pricing_mode) + prestation
-// de démonstration. Un document localStorage antérieur est re-seedé.
-export const MOCK_DB_VERSION = 3;
+// v4 : réglages de notification (notify_new_messages, notify_email).
+// Un document localStorage d'une version antérieure est re-seedé.
+export const MOCK_DB_VERSION = 4;
 
 // IDs stables (format UUID pour rester compatibles avec les validations zod).
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -645,6 +645,8 @@ export function buildSeed(now: Date = new Date()): MockDb {
       auto_reply_simple: true,
       send_form: true,
     },
+    notify_new_messages: true,
+    notify_email: null,
     activated_at: created,
     updated_at: created,
   };
