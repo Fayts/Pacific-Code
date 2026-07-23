@@ -31,6 +31,7 @@ import type {
   ConversationStatus,
   InboxConversation,
   InboxMessage,
+  KnowledgeEntry,
   MessageAuthor,
 } from "@/lib/types/inbox";
 
@@ -75,6 +76,8 @@ export type EquipmentDraft = {
   status: EquipmentStatus;
   usageInstructions: string;
   internalNotes: string;
+  /** URL de la photo (Storage en réel, data URL en mock) ; undefined = inchangé. */
+  photoUrl?: string | null;
 };
 
 export type CustomerDraft = {
@@ -232,6 +235,22 @@ export interface AgentSettingsRepository {
   update(patch: Partial<AgentSettings>): Promise<AgentSettings>;
 }
 
+export type KnowledgeDraft = {
+  question: string;
+  answer: string;
+  keywords: string[];
+  category: string;
+  isActive: boolean;
+  priority: number;
+};
+
+export interface KnowledgeRepository {
+  list(): Promise<KnowledgeEntry[]>;
+  create(draft: KnowledgeDraft): Promise<KnowledgeEntry>;
+  update(id: string, patch: Partial<KnowledgeDraft>): Promise<KnowledgeEntry>;
+  remove(id: string): Promise<void>;
+}
+
 // ------------------------------------------------------------
 // Fournisseur agrégé
 // ------------------------------------------------------------
@@ -248,6 +267,7 @@ export interface DataProvider {
   channels: ChannelRepository;
   inbox: InboxRepository;
   agentSettings: AgentSettingsRepository;
+  knowledge: KnowledgeRepository;
   /** Réabonne l'UI aux changements de données (retourne un désabonnement). */
   subscribe(listener: () => void): () => void;
   /**
@@ -255,6 +275,11 @@ export interface DataProvider {
    * routes API serveur (assistant LLM…) d'agir en son nom sous RLS.
    */
   getAccessToken?(): Promise<string | null>;
+  /**
+   * Téléverse une photo de matériel (JPEG compressé côté client) et renvoie
+   * son URL : Supabase Storage en réel, data URL en mock.
+   */
+  uploadEquipmentPhoto?(blob: Blob): Promise<string>;
   /** Restaure le jeu de données de démonstration. */
   resetDemoData(): Promise<void>;
 }

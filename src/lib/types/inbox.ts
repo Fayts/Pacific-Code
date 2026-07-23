@@ -57,6 +57,27 @@ export type InboxMessage = {
   created_at: string;
 };
 
+/**
+ * Entrée de la base de connaissances : une question type et la réponse
+ * validée par le loueur. L'agent la cite telle quelle, il ne la reformule
+ * jamais — c'est ce qui garantit qu'il n'invente rien.
+ */
+export type KnowledgeEntry = {
+  id: string;
+  organization_id: string;
+  question: string;
+  answer: string;
+  /** Mots-clés déclencheurs : un seul suffit à faire gagner l'entrée. */
+  keywords: string[];
+  /** Regroupement libre pour l'écran de gestion (paiement, livraison…). */
+  category: string;
+  is_active: boolean;
+  /** Départage les entrées à score égal ; plus haut = prioritaire. */
+  priority: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AgentMode = "assisted" | "auto";
 
 export type AgentTone = "professional" | "warm" | "concise" | "premium";

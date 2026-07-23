@@ -8,17 +8,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Inbox } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
-import type { AgentSettings, ChannelConnection } from "@/lib/types/inbox";
+import type {
+  AgentSettings,
+  ChannelConnection,
+  KnowledgeEntry,
+} from "@/lib/types/inbox";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChannelCard } from "@/components/agent-settings/channel-card";
 import { AgentConfigForm } from "@/components/agent-settings/agent-config-form";
 import { AgentTestCard } from "@/components/agent-settings/agent-test-card";
+import { KnowledgeCard } from "@/components/agent-settings/knowledge-card";
 
 type PageData = {
   channels: ChannelConnection[];
   settings: AgentSettings;
+  knowledge: KnowledgeEntry[];
 };
 
 export function ConnectionsClient() {
@@ -27,11 +33,13 @@ export function ConnectionsClient() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([provider.channels.list(), provider.agentSettings.get()]).then(
-      ([channels, settings]) => {
-        if (!cancelled) setData({ channels, settings });
-      }
-    );
+    Promise.all([
+      provider.channels.list(),
+      provider.agentSettings.get(),
+      provider.knowledge.list(),
+    ]).then(([channels, settings, knowledge]) => {
+      if (!cancelled) setData({ channels, settings, knowledge });
+    });
     return () => {
       cancelled = true;
     };
@@ -108,10 +116,18 @@ export function ConnectionsClient() {
           <AgentConfigForm key={data.settings.updated_at} settings={data.settings} />
         </section>
 
-        {/* Étape 3 : test + activation */}
+        {/* Étape 3 : ce que l'agent sait répondre */}
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground">
-            3. Testez, puis activez
+            3. Ce que votre agent sait répondre
+          </h2>
+          <KnowledgeCard entries={data.knowledge} />
+        </section>
+
+        {/* Étape 4 : test + activation */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            4. Testez, puis activez
           </h2>
           <AgentTestCard settings={data.settings} organization={organization} />
         </section>

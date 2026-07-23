@@ -24,6 +24,8 @@ import {
 } from "@/lib/core/dates";
 import { computeBookingTotals, computeDurationDays } from "@/lib/core/pricing";
 import { formatCustomerName, formatMoney } from "@/lib/core/format";
+import { containsWord, normalize, tokens } from "@/lib/ai/text";
+import { matchKnowledge, type KnowledgeMatch } from "@/lib/ai/knowledge";
 
 // ------------------------------------------------------------
 // Types de l'analyse
@@ -34,6 +36,8 @@ export type AgentIntent =
   | "price_question"
   | "availability_question"
   | "practical_question"
+  /** Répondu depuis la base de connaissances du loueur. */
+  | "knowledge_question"
   | "complaint"
   | "cancellation"
   | "discount_request"
@@ -68,6 +72,15 @@ export type AgentAnalysis = {
   pricing: { total: number; deposit: number } | null;
   customer: { id: string; name: string } | null;
   missing: string[];
+  /** Entrée de la base de connaissances utilisée pour répondre, si c'est le cas. */
+  knowledge: {
+    id: string;
+    question: string;
+    category: string;
+    score: number;
+    /** Mots-clés qui ont déclenché l'appariement. */
+    matched: string[];
+  } | null;
   draftReply: string;
   /** Réponse envoyable sans validation (mode auto + demande simple complète). */
   autoSendable: boolean;
@@ -76,16 +89,6 @@ export type AgentAnalysis = {
 // ------------------------------------------------------------
 // Normalisation et détection d'intention
 // ------------------------------------------------------------
-
-const DIACRITICS = new RegExp("[\\u0300-\\u036f]", "g");
-
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(DIACRITICS, "")
-    .replace(new RegExp("[\\u2019\\u2018]", "g"), "'");
-}
 
 const COMPLAINT = /mecontent|insatisfait|probleme|panne|casse|arrete de fonctionner|ne fonctionne (plus|pas)|plainte|reclamation|inadmissible/;
 const CANCELLATION = /annul/;
@@ -112,20 +115,6 @@ function detectIntent(t: string): AgentIntent {
 
 /** Score minimal pour désigner un matériel avec confiance. */
 const MIN_CONFIDENT_SCORE = 3;
-
-function tokens(value: string, minLength = 2): string[] {
-  return normalize(value)
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= minLength);
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function containsWord(text: string, token: string): boolean {
-  return new RegExp(`\\b${escapeRegExp(token)}\\b`).test(text);
-}
 
 function scoreEquipment(
   t: string,
@@ -349,7 +338,9 @@ export async function analyzeConversation(
   ].join("\n");
   const t = normalize(inboundText);
 
-  const intent = detectIntent(t);
+  // L'intention peut basculer sur « knowledge_question » plus bas, quand
+  // la base de connaissances répond mieux que le catalogue.
+  let intent = detectIntent(t);
   const complexity =
     intent === "complaint" ||
     intent === "cancellation" ||
@@ -358,9 +349,10 @@ export async function analyzeConversation(
       : "simple";
 
   // --- Matériel ---
-  const [equipmentList, categories] = await Promise.all([
+  const [equipmentList, categories, knowledgeEntries] = await Promise.all([
     provider.equipment.list(),
     provider.categories.list(),
+    provider.knowledge.list(),
   ]);
   const categoryText = new Map(
     categories.map((c) => [c.id, `${c.name} ${c.description ?? ""}`])
@@ -467,6 +459,27 @@ export async function analyzeConversation(
     missing.push("les coordonnées complètes du client (via le formulaire)");
   }
 
+  // --- Base de connaissances ---
+  // Elle ne prend la main que si le catalogue n'a rien à dire : une demande
+  // de location identifiée (matériel + dates) reste traitée par les données
+  // réelles, qui priment toujours sur une réponse pré-rédigée. Les demandes
+  // complexes (réclamation, annulation, remise) restent transmises au loueur.
+  const knowledgeMatch: KnowledgeMatch | null =
+    complexity === "simple"
+      ? matchKnowledge(inboundText, knowledgeEntries)
+      : null;
+  const knowledgeApplies =
+    knowledgeMatch !== null &&
+    (intent === "practical_question" ||
+      intent === "other" ||
+      // Demande de location dont le catalogue ne tire RIEN : ni matériel
+      // sûr, ni même un candidat plausible, ni dates. S'il reste un
+      // candidat, on demande de préciser — répondre à côté serait pire.
+      (rentalLike &&
+        !equipmentRow &&
+        candidates.length === 0 &&
+        !period));
+
   // --- Rédaction ---
   const money = (n: number) => formatMoney(n, currency);
   const formInvite = settings.permissions.send_form
@@ -564,6 +577,11 @@ export async function analyzeConversation(
       );
     }
     autoSendable = true;
+  } else if (knowledgeApplies && knowledgeMatch) {
+    // La réponse validée par le loueur part telle quelle, sans reformulation.
+    paragraphs.push(knowledgeMatch.entry.answer.trim());
+    intent = "knowledge_question";
+    autoSendable = true;
   } else if (intent === "practical_question") {
     if (settings.practical_info.trim()) {
       paragraphs.push(settings.practical_info.trim());
@@ -626,6 +644,16 @@ export async function analyzeConversation(
     pricing,
     customer,
     missing,
+    knowledge:
+      knowledgeApplies && knowledgeMatch
+        ? {
+            id: knowledgeMatch.entry.id,
+            question: knowledgeMatch.entry.question,
+            category: knowledgeMatch.entry.category,
+            score: knowledgeMatch.score,
+            matched: knowledgeMatch.matched,
+          }
+        : null,
     draftReply,
     autoSendable: finalAutoSendable,
   };

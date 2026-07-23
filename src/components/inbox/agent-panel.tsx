@@ -38,6 +38,7 @@ const INTENT_LABELS: Record<AgentAnalysis["intent"], string> = {
   price_question: "Question de tarif",
   availability_question: "Question de disponibilité",
   practical_question: "Question pratique",
+  knowledge_question: "Question courante",
   complaint: "Réclamation",
   cancellation: "Demande d'annulation",
   discount_request: "Demande de remise",
@@ -222,6 +223,17 @@ export function AgentPanel({
               <span className="text-muted-foreground">—</span>
             )}
           </Row>
+
+          {analysis.knowledge && (
+            <Row label="Source de la réponse">
+              <span className="text-sm">
+                Base de connaissances —{" "}
+                <span className="text-muted-foreground">
+                  « {analysis.knowledge.question} »
+                </span>
+              </span>
+            </Row>
+          )}
 
           {analysis.missing.length > 0 && (
             <Row label="Informations manquantes">

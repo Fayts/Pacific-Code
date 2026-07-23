@@ -20,12 +20,14 @@ import type {
   ChannelConnection,
   InboxConversation,
   InboxMessage,
+  KnowledgeEntry,
 } from "@/lib/types/inbox";
 import type { SessionUser } from "@/lib/data/repositories";
 
+// v5 : base de connaissances de l'agent (knowledgeEntries).
 // v4 : réglages de notification (notify_new_messages, notify_email).
 // Un document localStorage d'une version antérieure est re-seedé.
-export const MOCK_DB_VERSION = 4;
+export const MOCK_DB_VERSION = 5;
 
 // IDs stables (format UUID pour rester compatibles avec les validations zod).
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -55,6 +57,12 @@ export const CONV_JEAN = "a2222222-2222-4222-8222-222222222222";
 export const CONV_K5 = "a3333333-3333-4333-8333-333333333333";
 export const CONV_FORM = "a4444444-4444-4444-8444-444444444444";
 export const CONV_COMPLAINT = "a5555555-5555-4555-8555-555555555555";
+const KB_PAIEMENT = "b1111111-1111-4111-8111-111111111111";
+const KB_CAUTION = "b2222222-2222-4222-8222-222222222222";
+const KB_LIVRAISON = "b3333333-3333-4333-8333-333333333333";
+const KB_HORAIRES = "b4444444-4444-4444-8444-444444444444";
+const KB_RETARD = "b5555555-5555-4555-8555-555555555555";
+const KB_NETTOYAGE = "b6666666-6666-4666-8666-666666666666";
 
 export type MockDb = {
   version: number;
@@ -73,6 +81,7 @@ export type MockDb = {
   conversations: InboxConversation[];
   inboxMessages: InboxMessage[];
   agentSettings: AgentSettings;
+  knowledgeEntries: KnowledgeEntry[];
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -651,6 +660,74 @@ export function buildSeed(now: Date = new Date()): MockDb {
     updated_at: created,
   };
 
+  // Base de connaissances : ce que l'agent sait répondre en dehors du
+  // catalogue et des disponibilités. Un mot-clé touché suffit à déclencher
+  // la réponse — elle part telle quelle, sans reformulation.
+  const kb = (
+    id: string,
+    category: string,
+    question: string,
+    keywords: string[],
+    answer: string,
+    priority = 0
+  ): KnowledgeEntry => ({
+    id,
+    organization_id: ORG_ID,
+    question,
+    answer,
+    keywords,
+    category,
+    is_active: true,
+    priority,
+    created_at: created,
+    updated_at: created,
+  });
+
+  const knowledgeEntries: KnowledgeEntry[] = [
+    kb(
+      KB_PAIEMENT,
+      "paiement",
+      "Comment puis-je payer ma location ?",
+      ["paiement", "payer", "carte bancaire", "especes", "virement", "cheque"],
+      "Le règlement se fait au retrait du matériel, en espèces, par carte bancaire ou par virement. Une facture vous est remise systématiquement. (Données fictives)"
+    ),
+    kb(
+      KB_CAUTION,
+      "caution",
+      "Quelle caution demandez-vous ?",
+      ["caution", "depot de garantie", "garantie", "empreinte bancaire"],
+      "Une caution est demandée à la remise du matériel, par empreinte bancaire ou chèque non encaissé. Elle est restituée au retour, après vérification de l'état de la machine. Son montant dépend du matériel loué et vous est indiqué avant la réservation. (Données fictives)"
+    ),
+    kb(
+      KB_LIVRAISON,
+      "livraison",
+      "Livrez-vous le matériel à domicile ?",
+      ["livraison", "livrez", "domicile", "deplacement", "moorea", "recuperer"],
+      "Le retrait se fait à notre dépôt de Papeete. Nous livrons également sur Tahiti, sur devis selon la commune. Pour les îles (Moorea et autres), le transport est à votre charge par la goélette ou le ferry. (Données fictives)"
+    ),
+    kb(
+      KB_HORAIRES,
+      "horaires",
+      "Quels sont vos horaires d'ouverture ?",
+      ["horaire", "ouvert", "ouverture", "samedi", "dimanche", "ferme"],
+      "Nous sommes ouverts du lundi au samedi, de 7 h 30 à 17 h 00, sans interruption. Nous sommes fermés le dimanche et les jours fériés. (Données fictives)"
+    ),
+    kb(
+      KB_RETARD,
+      "location",
+      "Que se passe-t-il si je rends le matériel en retard ?",
+      ["retard", "prolonger", "prolongation", "garder plus longtemps", "rendre"],
+      "Prévenez-nous dès que possible : si le matériel n'est pas réservé derrière, nous prolongeons simplement votre location au tarif journalier habituel. Sans prévenir, tout jour entamé est facturé. (Données fictives)"
+    ),
+    kb(
+      KB_NETTOYAGE,
+      "materiel",
+      "Faut-il rendre la machine nettoyée ?",
+      ["rendre nettoyee", "rendre propre", "laver la machine", "rincer"],
+      "Merci de rendre la machine vidée et rincée, comme elle vous a été remise. Un simple rinçage des cuves et du suceur suffit — nous nous chargeons de l'entretien complet entre deux locations. (Données fictives)"
+    ),
+  ];
+
   return {
     version: MOCK_DB_VERSION,
     seededAt: now.toISOString(),
@@ -675,5 +752,6 @@ export function buildSeed(now: Date = new Date()): MockDb {
     conversations,
     inboxMessages,
     agentSettings,
+    knowledgeEntries,
   };
 }

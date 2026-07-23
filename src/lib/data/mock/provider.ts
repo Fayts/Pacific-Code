@@ -32,6 +32,8 @@ import type {
   DataProvider,
   EquipmentDraft,
   EquipmentRepository,
+  KnowledgeDraft,
+  KnowledgeRepository,
   OrganizationRepository,
   Session,
   SessionUser,
@@ -44,6 +46,7 @@ import type {
   ConversationStatus,
   InboxConversation,
   InboxMessage,
+  KnowledgeEntry,
 } from "@/lib/types/inbox";
 import { buildSeed, MOCK_DB_VERSION, type MockDb } from "@/lib/data/mock/seed";
 import {
@@ -620,6 +623,66 @@ export class MockDataProvider implements DataProvider {
       };
       this.persist();
       return db.agentSettings;
+    },
+  };
+
+  // ----------------------------------------------------------
+  // Base de connaissances de l'agent
+  // ----------------------------------------------------------
+
+  knowledge: KnowledgeRepository = {
+    list: async (): Promise<KnowledgeEntry[]> =>
+      [...(this.load().knowledgeEntries ?? [])].sort(
+        (a, b) =>
+          a.category.localeCompare(b.category) ||
+          b.priority - a.priority ||
+          a.question.localeCompare(b.question)
+      ),
+
+    create: async (draft: KnowledgeDraft): Promise<KnowledgeEntry> => {
+      const db = this.load();
+      const nowIso = this.now().toISOString();
+      const entry: KnowledgeEntry = {
+        id: uuid(),
+        organization_id: db.organization.id,
+        question: draft.question,
+        answer: draft.answer,
+        keywords: draft.keywords,
+        category: draft.category,
+        is_active: draft.isActive,
+        priority: draft.priority,
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+      db.knowledgeEntries = [...(db.knowledgeEntries ?? []), entry];
+      this.persist();
+      return entry;
+    },
+
+    update: async (
+      id: string,
+      patch: Partial<KnowledgeDraft>
+    ): Promise<KnowledgeEntry> => {
+      const db = this.load();
+      const entry = (db.knowledgeEntries ?? []).find((e) => e.id === id);
+      if (!entry) throw new Error("Entrée introuvable");
+      if (patch.question !== undefined) entry.question = patch.question;
+      if (patch.answer !== undefined) entry.answer = patch.answer;
+      if (patch.keywords !== undefined) entry.keywords = patch.keywords;
+      if (patch.category !== undefined) entry.category = patch.category;
+      if (patch.isActive !== undefined) entry.is_active = patch.isActive;
+      if (patch.priority !== undefined) entry.priority = patch.priority;
+      entry.updated_at = this.now().toISOString();
+      this.persist();
+      return entry;
+    },
+
+    remove: async (id: string): Promise<void> => {
+      const db = this.load();
+      db.knowledgeEntries = (db.knowledgeEntries ?? []).filter(
+        (e) => e.id !== id
+      );
+      this.persist();
     },
   };
 

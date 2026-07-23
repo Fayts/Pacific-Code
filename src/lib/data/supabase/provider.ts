@@ -34,6 +34,7 @@ import type {
   ConversationStatus,
   InboxConversation,
   InboxMessage,
+  KnowledgeEntry,
 } from "@/lib/types/inbox";
 import type {
   AgentSettingsRepository,
@@ -49,6 +50,8 @@ import type {
   EquipmentDraft,
   EquipmentRepository,
   InboxRepository,
+  KnowledgeDraft,
+  KnowledgeRepository,
   NewInboxMessage,
   OrganizationRepository,
   Session,
@@ -1060,6 +1063,74 @@ export class SupabaseDataProvider implements DataProvider {
       if (error) throw new Error(error.message);
       this.notify();
       return data as AgentSettings;
+    },
+  };
+
+  // ----------------------------------------------------------
+  // Base de connaissances de l'agent
+  // ----------------------------------------------------------
+
+  knowledge: KnowledgeRepository = {
+    list: async (): Promise<KnowledgeEntry[]> => {
+      const { data } = await this.raw
+        .from("knowledge_entries")
+        .select("*")
+        .order("category")
+        .order("priority", { ascending: false })
+        .order("question");
+      return (data ?? []) as KnowledgeEntry[];
+    },
+
+    create: async (draft: KnowledgeDraft): Promise<KnowledgeEntry> => {
+      const ctx = await this.ensureContext();
+      if (!ctx) throw new Error("Aucune organisation active");
+      const { data, error } = await this.raw
+        .from("knowledge_entries")
+        .insert({
+          organization_id: ctx.orgId,
+          question: draft.question,
+          answer: draft.answer,
+          keywords: draft.keywords,
+          category: draft.category,
+          is_active: draft.isActive,
+          priority: draft.priority,
+        })
+        .select("*")
+        .single();
+      if (error) throw new Error(error.message);
+      this.notify();
+      return data as KnowledgeEntry;
+    },
+
+    update: async (
+      id: string,
+      patch: Partial<KnowledgeDraft>
+    ): Promise<KnowledgeEntry> => {
+      const payload: Record<string, unknown> = {};
+      if (patch.question !== undefined) payload.question = patch.question;
+      if (patch.answer !== undefined) payload.answer = patch.answer;
+      if (patch.keywords !== undefined) payload.keywords = patch.keywords;
+      if (patch.category !== undefined) payload.category = patch.category;
+      if (patch.isActive !== undefined) payload.is_active = patch.isActive;
+      if (patch.priority !== undefined) payload.priority = patch.priority;
+      const { data, error } = await this.raw
+        .from("knowledge_entries")
+        .update(payload)
+        .eq("id", id)
+        .select("*")
+        .single();
+      if (error) throw new Error(error.message);
+      this.notify();
+      return data as KnowledgeEntry;
+    },
+
+    remove: async (id: string): Promise<void> => {
+      const { error } = await this.raw
+        .from("knowledge_entries")
+        .delete()
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+      this.notify();
     },
   };
 }
