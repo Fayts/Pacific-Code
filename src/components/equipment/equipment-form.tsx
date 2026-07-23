@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import { toast } from "sonner";
+import { ImagePlus } from "lucide-react";
+import { blobToDataUrl, compressPhoto } from "@/lib/core/photo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -59,6 +61,25 @@ export function EquipmentForm({
   const { provider } = useAppData();
   const [pending, startTransition] = useTransition();
   const [categoryList, setCategoryList] = useState(categories);
+  // Photo : aperçu local (data URL) + blob compressé à téléverser.
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    equipment?.photo_url ?? null
+  );
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const blob = await compressPhoto(file);
+      setPhotoBlob(blob);
+      setPhotoPreview(await blobToDataUrl(blob));
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Photo illisible — réessayez."
+      );
+    }
+  };
 
   const {
     register,
@@ -119,6 +140,24 @@ export function EquipmentForm({
 
   const onSubmit = (values: EquipmentInput) => {
     startTransition(async () => {
+      // Photo : téléversée seulement à l'enregistrement (jamais orpheline).
+      let photoUrl: string | null | undefined = photoPreview;
+      if (photoBlob && provider.uploadEquipmentPhoto) {
+        try {
+          photoUrl = await provider.uploadEquipmentPhoto(photoBlob);
+        } catch (err) {
+          toast.error(
+            err instanceof Error
+              ? `Photo non enregistrée : ${err.message}`
+              : "Photo non enregistrée — réessayez."
+          );
+          return;
+        }
+      } else if (equipment && photoPreview === equipment.photo_url) {
+        photoUrl = undefined; // inchangée
+      }
+      values = { ...values, photoUrl };
+
       if (equipment) {
         const result = await updateEquipment(equipment.id, values, provider);
         if (!result.ok) {
@@ -232,6 +271,61 @@ export function EquipmentForm({
             {errors.description && (
               <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Photo</Label>
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreview}
+                  alt="Photo du matériel"
+                  className="size-24 rounded-xl object-cover ring-1 ring-pc-deep/10"
+                />
+              ) : (
+                <span className="flex size-24 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                  <ImagePlus className="size-6" aria-hidden />
+                </span>
+              )}
+              <div className="flex flex-col items-start gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {photoPreview ? "Changer la photo" : "Ajouter une photo"}
+                </Button>
+                {photoPreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => {
+                      setPhotoPreview(null);
+                      setPhotoBlob(null);
+                    }}
+                  >
+                    Retirer la photo
+                  </Button>
+                )}
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  void pickPhoto(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Affichée sur votre vitrine publique — compressée automatiquement.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -410,11 +504,6 @@ export function EquipmentForm({
           </div>
         </CardContent>
       </Card>
-
-      <p className="text-sm text-muted-foreground">
-        Version de démonstration : l&apos;ajout de photos sera disponible une
-        fois le stockage en ligne connecté.
-      </p>
 
       <div className="flex items-center justify-end gap-2">
         <Button

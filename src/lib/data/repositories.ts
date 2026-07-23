@@ -75,6 +75,8 @@ export type EquipmentDraft = {
   status: EquipmentStatus;
   usageInstructions: string;
   internalNotes: string;
+  /** URL de la photo (Storage en réel, data URL en mock) ; undefined = inchangé. */
+  photoUrl?: string | null;
 };
 
 export type CustomerDraft = {
@@ -255,6 +257,11 @@ export interface DataProvider {
    * routes API serveur (assistant LLM…) d'agir en son nom sous RLS.
    */
   getAccessToken?(): Promise<string | null>;
+  /**
+   * Téléverse une photo de matériel (JPEG compressé côté client) et renvoie
+   * son URL : Supabase Storage en réel, data URL en mock.
+   */
+  uploadEquipmentPhoto?(blob: Blob): Promise<string>;
   /** Restaure le jeu de données de démonstration. */
   resetDemoData(): Promise<void>;
 }

@@ -28,6 +28,8 @@ export const equipmentSchema = z.object({
   status: z.enum(["available", "maintenance", "unavailable"]),
   usageInstructions: z.string().trim().max(10_000).optional().or(z.literal("")),
   internalNotes: z.string().trim().max(10_000).optional().or(z.literal("")),
+  /** URL Storage (réel) ou data URL (mock) ; undefined = photo inchangée. */
+  photoUrl: z.string().max(500_000).nullable().optional(),
 });
 
 export const categorySchema = z.object({

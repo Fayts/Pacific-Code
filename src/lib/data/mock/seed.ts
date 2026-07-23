@@ -97,6 +97,9 @@ export function buildSeed(now: Date = new Date()): MockDb {
     phone: "+689 87 12 34 56",
     email: "contact@pacific-rentclean.pf",
     address: "Papeete, Tahiti — Polynésie française",
+    slug: "pacific-rent-clean-demo",
+    storefront_welcome: null,
+    storefront_visible: true,
     onboarding_completed_at: created,
     created_by: DEMO_USER_ID,
     created_at: created,
@@ -165,6 +168,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions:
         "Remplir le réservoir d'eau propre avec le détergent fourni (1 dose pour 4 L). Vider et rincer le bac de récupération après usage.",
       internal_notes: "Données fictives — 2 exemplaires en stock.",
+      photo_url: null,
     },
     {
       ...equipmentDefaults,
@@ -182,6 +186,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions:
         "Utiliser uniquement le détergent RM 760 fourni. Ne pas aspirer de liquides autres que l'eau de nettoyage.",
       internal_notes: "Données fictives.",
+      photo_url: null,
     },
     {
       ...equipmentDefaults,
@@ -199,6 +204,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions:
         "Vérifier le contenu du pack à la remise et au retour (liste fournie dans la mallette).",
       internal_notes: "Données fictives — pack le plus demandé.",
+      photo_url: null,
     },
     {
       ...equipmentDefaults,
@@ -216,6 +222,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions:
         "Purger l'eau après chaque utilisation. Ne jamais utiliser d'eau de mer.",
       internal_notes: "Données fictives — joint haute pression à remplacer.",
+      photo_url: null,
     },
     {
       ...equipmentDefaults,
@@ -233,6 +240,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
       status: "available",
       usage_instructions: "",
       internal_notes: "Données fictives — forfait, ne dépend pas de la durée.",
+      photo_url: null,
     },
   ];
 
