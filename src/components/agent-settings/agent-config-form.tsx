@@ -163,10 +163,10 @@ export function AgentConfigForm({ settings }: { settings: AgentSettings }) {
                   Alerte email à chaque nouveau message
                 </Label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Un client vous écrit (Messenger, formulaire…) : vous recevez
-                  un email avec un lien direct pour répondre. Au plus une
-                  alerte par conversation toutes les 30 minutes. Envoyée via
-                  votre compte email connecté.
+                  Un client vous écrit (Messenger, email, formulaire…) : vous
+                  recevez un email avec un lien direct pour répondre. Au plus
+                  une alerte par conversation toutes les 30 minutes. Envoyée
+                  via votre compte email connecté.
                 </p>
               </div>
               <Switch

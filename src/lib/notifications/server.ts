@@ -120,14 +120,9 @@ export async function notifyInboundMessage(params: {
     }
 
     const to = claim.notify_email ?? account.address;
-    // Un email reçu dans cette boîte n'a pas besoin d'une alerte… dans la
-    // même boîte. (L'alerte reste utile si l'adresse de notification diffère.)
-    if (
-      (claim.channel === "gmail" || claim.channel === "outlook") &&
-      to.toLowerCase() === account.address.toLowerCase()
-    ) {
-      return;
-    }
+    // L'alerte part aussi pour un email reçu dans cette même boîte (choix
+    // du pilote) : son objet distinctif et son lien direct la démarquent
+    // du message d'origine.
     const channelLabel = CHANNEL_LABELS[claim.channel] ?? claim.channel;
     const subject = `${claim.customer_name} vous a écrit (${channelLabel}) — Pacific Code`;
     const snippet = params.snippet.replace(/\s+/g, " ").trim().slice(0, 300);

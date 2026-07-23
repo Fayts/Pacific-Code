@@ -6,6 +6,7 @@ import { Waves } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { useUnreadConversations } from "@/components/layout/use-unread-conversations";
 import { WaveLines } from "@/components/landing/decor";
 
 export function SidebarNavList({
@@ -16,6 +17,7 @@ export function SidebarNavList({
   layoutId: string;
 }) {
   const pathname = usePathname();
+  const unread = useUnreadConversations();
 
   return (
     <ul className="space-y-1">
@@ -56,7 +58,15 @@ export function SidebarNavList({
                 )}
                 aria-hidden
               />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/inbox" && unread > 0 && (
+                <span
+                  aria-label={`${unread} conversation${unread > 1 ? "s" : ""} non lue${unread > 1 ? "s" : ""}`}
+                  className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-pc-turquoise px-1.5 py-0.5 text-[11px] font-semibold leading-none text-pc-abyss"
+                >
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
             </Link>
           </li>
         );
