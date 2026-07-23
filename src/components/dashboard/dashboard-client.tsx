@@ -31,6 +31,7 @@ import {
   type FleetCounts,
 } from "@/components/dashboard/fleet-summary";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { ReadyRequests } from "@/components/dashboard/ready-requests";
 import { ImportHeaderAction } from "@/components/dashboard/import-header-action";
 import { ActivationScreen } from "@/components/dashboard/activation-screen";
 import {
@@ -242,6 +243,7 @@ export function DashboardClient() {
       />
 
       <div className="space-y-4">
+        <ReadyRequests />
         <SummaryCards
           departuresToday={departuresToday}
           returnsToday={returnsToday}

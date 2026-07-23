@@ -11,6 +11,7 @@ import { ArrowLeft, Inbox, Plug } from "lucide-react";
 import { toast } from "sonner";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { analyzeConversation, type AgentAnalysis } from "@/lib/ai/agent-engine";
+import { isReadyToBook, OPEN_STATUSES } from "@/lib/ai/booking-conversion";
 import {
   deleteConversation,
   updateAgentSettings,
@@ -76,9 +77,27 @@ export function InboxClient() {
         conversations.map(async (conversation) => {
           const thread = await provider.inbox.listMessages(conversation.id);
           const last = thread[thread.length - 1];
+          // Badge « Prêt à réserver » : analyse locale (règles, zéro IA),
+          // uniquement pour les conversations encore ouvertes.
+          let readyToBook = false;
+          if (
+            organization &&
+            (OPEN_STATUSES as readonly string[]).includes(conversation.status)
+          ) {
+            try {
+              const analysis = await analyzeConversation(
+                { conversation, messages: thread },
+                { provider, organization, settings }
+              );
+              readyToBook = isReadyToBook(analysis);
+            } catch {
+              // Analyse impossible : pas de badge, la liste reste utilisable.
+            }
+          }
           return {
             conversation,
             snippet: last ? last.body.replace(/\s+/g, " ") : "",
+            readyToBook,
           };
         })
       );
@@ -87,7 +106,7 @@ export function InboxClient() {
     return () => {
       cancelled = true;
     };
-  }, [provider, version, tick]);
+  }, [provider, organization, version, tick]);
 
   // Fil + analyse de la conversation sélectionnée.
   useEffect(() => {
