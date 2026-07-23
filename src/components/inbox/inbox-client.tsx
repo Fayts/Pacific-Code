@@ -51,6 +51,15 @@ export function InboxClient() {
 
   const selectedId = searchParams.get("c");
 
+  // Les messages arrivent côté serveur (webhook, relève cron) sans que le
+  // navigateur en soit averti : la boîte se rafraîchit donc toutes les 45 s.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (provider.kind !== "supabase") return;
+    const interval = setInterval(() => setTick((t) => t + 1), 45_000);
+    return () => clearInterval(interval);
+  }, [provider]);
+
   // Conversations + aperçus (dernier message de chaque fil).
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +83,7 @@ export function InboxClient() {
     return () => {
       cancelled = true;
     };
-  }, [provider, version]);
+  }, [provider, version, tick]);
 
   // Fil + analyse de la conversation sélectionnée.
   useEffect(() => {
@@ -98,7 +107,7 @@ export function InboxClient() {
     return () => {
       cancelled = true;
     };
-  }, [provider, version, selectedId, organization]);
+  }, [provider, version, selectedId, organization, tick]);
 
   if (!data || !organization) {
     return (

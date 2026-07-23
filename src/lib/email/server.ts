@@ -25,6 +25,8 @@ export type IncomingEmail = {
   body: string;
   /** Gmail : Message-ID internet ; Outlook : identifiant Graph du message. */
   replyToMessageId: string;
+  /** Identifiant unique du message chez le fournisseur (déduplication). */
+  providerMessageId: string;
   /** Position de relève : gmail = epoch ms ; outlook = ISO receivedDateTime. */
   position: string;
 };
@@ -456,6 +458,7 @@ export async function listNewGmailMessages(
       subject: gmailHeader(message, "Subject"),
       body: extractGmailBody(message.payload) || "[message vide]",
       replyToMessageId: gmailHeader(message, "Message-ID"),
+      providerMessageId: message.id,
       position,
     });
   }
@@ -517,6 +520,7 @@ export async function listNewOutlookMessages(
           ? htmlToText(content)
           : content.trim()) || "[message vide]",
       replyToMessageId: message.id,
+      providerMessageId: message.id,
       position: message.receivedDateTime ?? "",
     });
   }

@@ -115,12 +115,14 @@ export async function POST(request: NextRequest) {
             p_subject: message.subject,
             p_body: message.body,
             p_reply_to_message_id: message.replyToMessageId,
+            p_provider_message_id: message.providerMessageId || null,
           }
         );
         if (ingestError) {
           console.error("[email/poll] ingest error:", ingestError.message);
         } else {
           ingested += 1;
+          // conversationId null = doublon ignoré par la déduplication.
           if (typeof conversationId === "string") {
             // Alerte email au loueur (anti-rafale côté SQL, jamais bloquant).
             await notifyInboundMessage({
