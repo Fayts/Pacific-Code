@@ -553,6 +553,15 @@ export class MockDataProvider implements DataProvider {
       this.persist();
     },
 
+    deleteConversation: async (conversationId: string): Promise<void> => {
+      const db = this.load();
+      db.conversations = db.conversations.filter((c) => c.id !== conversationId);
+      db.inboxMessages = db.inboxMessages.filter(
+        (m) => m.conversation_id !== conversationId
+      );
+      this.persist();
+    },
+
     createConversation: async (input) => {
       const db = this.load();
       const nowIso = this.now().toISOString();

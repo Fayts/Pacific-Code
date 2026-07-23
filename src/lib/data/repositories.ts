@@ -215,6 +215,8 @@ export interface InboxRepository {
     message: NewInboxMessage
   ): Promise<InboxMessage | null>;
   setStatus(conversationId: string, status: ConversationStatus): Promise<void>;
+  /** Supprime la conversation et tous ses messages (irréversible). */
+  deleteConversation(conversationId: string): Promise<void>;
   /** Nouvelle conversation entrante (formulaire public, simulation, webhooks demain). */
   createConversation(input: {
     channel: ChannelKind;

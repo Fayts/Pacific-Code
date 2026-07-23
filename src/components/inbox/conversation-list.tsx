@@ -3,8 +3,10 @@
 // Colonne gauche de la boîte de réception : liste des conversations,
 // tous canaux confondus, avec aperçu du dernier message et statut.
 
+import { Trash2 } from "lucide-react";
 import { ConversationStatusBadge } from "@/components/shared/status-badge";
 import { ChannelIcon } from "@/components/inbox/channel-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import type { InboxConversation } from "@/lib/types/inbox";
 import { cn } from "@/lib/utils";
 
@@ -33,23 +35,28 @@ export function ConversationList({
   selectedId,
   now,
   onSelect,
+  onDelete,
 }: {
   items: ConversationListItem[];
   selectedId: string | null;
   now: Date;
   onSelect: (id: string) => void;
+  onDelete?: (id: string) => Promise<void>;
 }) {
   return (
     <ul className="divide-y divide-border">
       {items.map(({ conversation, snippet }) => {
         const active = conversation.id === selectedId;
         return (
-          <li key={conversation.id}>
+          // La corbeille est un FRÈRE du bouton de ligne (jamais imbriquée :
+          // deux <button> emboîtés sont invalides), positionnée par-dessus.
+          <li key={conversation.id} className="group relative">
             <button
               type="button"
               onClick={() => onSelect(conversation.id)}
               className={cn(
                 "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors",
+                onDelete && "pr-9",
                 active
                   ? "bg-primary/[0.06]"
                   : "hover:bg-muted/60"
@@ -78,6 +85,26 @@ export function ConversationList({
                 </span>
               </span>
             </button>
+            {onDelete && (
+              <span className="absolute right-1.5 bottom-2.5">
+                <ConfirmDialog
+                  title="Supprimer cette conversation ?"
+                  description={`La conversation avec ${conversation.customer_name} et tous ses messages seront définitivement supprimés.`}
+                  confirmLabel="Supprimer"
+                  destructive
+                  onConfirm={() => onDelete(conversation.id)}
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={`Supprimer la conversation avec ${conversation.customer_name}`}
+                      className="rounded-md p-1.5 text-muted-foreground/60 transition hover:bg-destructive/10 hover:text-destructive lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  }
+                />
+              </span>
+            )}
           </li>
         );
       })}

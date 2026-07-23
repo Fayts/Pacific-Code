@@ -163,6 +163,23 @@ export async function ignoreConversation(
   return actionOk(undefined);
 }
 
+/** Suppression définitive (conversation + messages). */
+export async function deleteConversation(
+  conversationId: string,
+  provider: DataProvider = getDataProvider()
+): Promise<ActionResult<undefined>> {
+  const conversation = await provider.inbox.getConversation(conversationId);
+  if (!conversation) return actionError("Conversation introuvable");
+  try {
+    await provider.inbox.deleteConversation(conversationId);
+  } catch (error) {
+    return actionError(
+      error instanceof Error ? error.message : "Suppression impossible"
+    );
+  }
+  return actionOk(undefined);
+}
+
 /** Nouvelle conversation entrante (simulation de test, formulaire public). */
 export async function simulateIncomingMessage(
   input: z.infer<typeof simulateSchema>,

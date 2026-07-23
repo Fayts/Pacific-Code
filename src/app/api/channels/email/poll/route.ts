@@ -12,7 +12,6 @@ import {
   listNewGmailMessages,
   listNewOutlookMessages,
   type EmailProvider,
-  type IncomingEmail,
 } from "@/lib/email/server";
 import { createAnonClient, rawRpc } from "@/lib/supabase/token-client";
 
@@ -40,15 +39,15 @@ function secretMatches(header: string | null): boolean {
   }
 }
 
-/** Point de reprise suivant : gmail = seconde du dernier message + 1. */
-function nextCursor(provider: EmailProvider, last: IncomingEmail): string {
+/** Point de reprise suivant : gmail = seconde du dernier message VU + 1. */
+function nextCursor(provider: EmailProvider, lastPosition: string): string {
   if (provider === "gmail") {
-    const epochMs = Number(last.position);
+    const epochMs = Number(lastPosition);
     return Number.isFinite(epochMs) && epochMs > 0
       ? String(Math.floor(epochMs / 1000) + 1)
       : String(Math.floor(Date.now() / 1000));
   }
-  return last.position || new Date().toISOString();
+  return lastPosition || new Date().toISOString();
 }
 
 export async function POST(request: NextRequest) {
@@ -72,8 +71,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Relève impossible" }, { status: 500 });
   }
 
-  const summary: Array<{ provider: string; ingested: number; error?: string }> =
-    [];
+  const summary: Array<{
+    provider: string;
+    ingested: number;
+    filtered?: number;
+    error?: string;
+  }> = [];
 
   for (const account of accountRows ?? []) {
     try {
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
         expiresAt: account.token_expires_at,
       });
 
-      const messages =
+      const { messages, lastPosition, filtered } =
         account.provider === "gmail"
           ? await listNewGmailMessages(
               tokens.accessToken,
@@ -120,9 +123,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Avance le point de reprise et persiste les jetons rafraîchis.
-      const last = messages[messages.length - 1];
-      if (refreshed || last) {
+      // Avance le point de reprise (y compris quand tout a été filtré :
+      // sinon les mêmes messages automatiques seraient relus sans fin)
+      // et persiste les jetons rafraîchis.
+      if (refreshed || lastPosition) {
         await rawRpc(supabase, "update_email_account_tokens", {
           p_secret: secret,
           p_organization_id: account.organization_id,
@@ -130,11 +134,13 @@ export async function POST(request: NextRequest) {
           p_access_token: refreshed ? tokens.accessToken : null,
           p_expires_at: refreshed ? tokens.expiresAt : null,
           p_refresh_token: refreshed ? tokens.refreshToken : null,
-          p_cursor: last ? nextCursor(account.provider, last) : null,
+          p_cursor: lastPosition
+            ? nextCursor(account.provider, lastPosition)
+            : null,
         });
       }
 
-      summary.push({ provider: account.provider, ingested });
+      summary.push({ provider: account.provider, ingested, filtered });
     } catch (err) {
       // Journal technique sans contenu de message.
       console.error(

@@ -8,8 +8,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Inbox, Plug } from "lucide-react";
+import { toast } from "sonner";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { analyzeConversation, type AgentAnalysis } from "@/lib/ai/agent-engine";
+import { deleteConversation } from "@/lib/services/inbox-service";
 import type { AgentSettings, InboxMessage } from "@/lib/types/inbox";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -130,6 +132,18 @@ export function InboxClient() {
     router.replace(`/inbox?c=${id}`, { scroll: false });
   };
 
+  const remove = async (id: string) => {
+    const result = await deleteConversation(id, provider);
+    if (!result.ok) {
+      toast.error(result.error ?? "Suppression impossible — réessayez.");
+      return;
+    }
+    if (selectedId === id) {
+      router.replace("/inbox", { scroll: false });
+    }
+    toast.success("Conversation supprimée.");
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <PageHeader
@@ -164,6 +178,7 @@ export function InboxClient() {
               selectedId={selectedId}
               now={now}
               onSelect={select}
+              onDelete={remove}
             />
           </aside>
 
@@ -189,6 +204,7 @@ export function InboxClient() {
                   conversation={selected}
                   messages={messages}
                   timezone={organization.timezone}
+                  onDelete={() => remove(selected.id)}
                 />
               </>
             ) : (

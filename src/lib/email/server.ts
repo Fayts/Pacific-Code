@@ -373,28 +373,82 @@ function gmailHeader(message: GmailMessage, name: string): string {
   );
 }
 
+// ------------------------------------------------------------
+// Filtre anti-bruit : seuls les messages écrits par un humain créent une
+// conversation. Newsletters, promotions, codes de vérification et alertes
+// automatiques sont écartés dès la relève — ils restent dans Gmail/Outlook,
+// simplement pas dans la boîte Pacific Code.
+// ------------------------------------------------------------
+
+// Parties locales d'adresses jamais humaines (no-reply@, notifications@…).
+const AUTOMATED_LOCALPART =
+  /^(?:no[-_.]?reply|do[-_.]?not[-_.]?reply|donotreply|notifications?|notify|alerts?|news(?:letters?)?|mailer-daemon|postmaster|bounces?|marketing|updates?)(?:[+._@-]|$)/i;
+
+/**
+ * Vrai si le message est automatique. `headerOf` renvoie la valeur d'un
+ * en-tête ("" si absent) — passer `() => ""` quand les en-têtes ne sont
+ * pas disponibles (seule l'adresse est alors testée).
+ */
+export function isAutomatedEmail(
+  fromEmail: string,
+  headerOf: (name: string) => string
+): boolean {
+  const localPart = fromEmail.split("@")[0] ?? "";
+  if (AUTOMATED_LOCALPART.test(localPart)) return true;
+  // Envois en masse : l'en-tête de désinscription est obligatoire chez eux.
+  if (headerOf("List-Unsubscribe") || headerOf("List-Id")) return true;
+  const precedence = headerOf("Precedence").toLowerCase();
+  if (["bulk", "list", "junk", "auto_reply"].includes(precedence)) return true;
+  const autoSubmitted = headerOf("Auto-Submitted").toLowerCase();
+  if (autoSubmitted && autoSubmitted !== "no") return true;
+  if (headerOf("X-Auto-Response-Suppress")) return true;
+  // Identifiants de campagne des plateformes d'envoi en masse.
+  if (headerOf("Feedback-ID") || headerOf("X-Feedback-ID")) return true;
+  return false;
+}
+
+export type EmailFetchResult = {
+  messages: IncomingEmail[];
+  /** Position du dernier message VU (même filtré) : avance le curseur. */
+  lastPosition: string;
+  /** Messages écartés par le filtre anti-bruit (journalisation). */
+  filtered: number;
+};
+
 /**
  * Nouveaux messages Gmail depuis le point de reprise (secondes epoch).
- * Les messages envoyés par le compte lui-même sont ignorés.
+ * Les messages envoyés par le compte lui-même et les messages
+ * automatiques (filtre anti-bruit) sont ignorés — mais font quand même
+ * avancer le point de reprise, sinon ils seraient relus à chaque relève.
  */
 export async function listNewGmailMessages(
   accessToken: string,
   ownAddress: string,
   cursorEpochSeconds: string
-): Promise<IncomingEmail[]> {
+): Promise<EmailFetchResult> {
   const query = encodeURIComponent(`in:inbox after:${cursorEpochSeconds}`);
   const list = await apiGet<{ messages?: Array<{ id: string }> }>(
     `${GMAIL}/messages?q=${query}&maxResults=20`,
     accessToken
   );
   const results: IncomingEmail[] = [];
+  let lastPosition = "";
+  let filtered = 0;
   for (const ref of list.messages ?? []) {
     const message = await apiGet<GmailMessage>(
       `${GMAIL}/messages/${ref.id}?format=full`,
       accessToken
     );
+    const position = message.internalDate ?? "";
+    if (position && Number(position) > Number(lastPosition || "0")) {
+      lastPosition = position;
+    }
     const from = parseFromHeader(gmailHeader(message, "From"));
     if (!from.email || from.email === ownAddress.toLowerCase()) continue;
+    if (isAutomatedEmail(from.email, (name) => gmailHeader(message, name))) {
+      filtered += 1;
+      continue;
+    }
     results.push({
       threadId: message.threadId,
       fromName: from.name,
@@ -402,12 +456,12 @@ export async function listNewGmailMessages(
       subject: gmailHeader(message, "Subject"),
       body: extractGmailBody(message.payload) || "[message vide]",
       replyToMessageId: gmailHeader(message, "Message-ID"),
-      position: message.internalDate ?? "",
+      position,
     });
   }
   // Ordre chronologique pour faire avancer le point de reprise proprement.
   results.sort((a, b) => Number(a.position) - Number(b.position));
-  return results;
+  return { messages: results, lastPosition, filtered };
 }
 
 type GraphMessage = {
@@ -417,6 +471,8 @@ type GraphMessage = {
   receivedDateTime?: string;
   from?: { emailAddress?: { name?: string; address?: string } };
   body?: { contentType?: string; content?: string };
+  /** Classement Microsoft : "focused" (prioritaire) ou "other" (pêle-mêle). */
+  inferenceClassification?: string;
 };
 
 /** Nouveaux messages Outlook depuis le point de reprise (ISO). */
@@ -424,18 +480,32 @@ export async function listNewOutlookMessages(
   accessToken: string,
   ownAddress: string,
   cursorIso: string
-): Promise<IncomingEmail[]> {
+): Promise<EmailFetchResult> {
   const filter = encodeURIComponent(`receivedDateTime gt ${cursorIso}`);
-  const select = "id,conversationId,subject,receivedDateTime,from,body";
+  const select =
+    "id,conversationId,subject,receivedDateTime,from,body,inferenceClassification";
   const list = await apiGet<{ value?: GraphMessage[] }>(
     `${GRAPH}/me/mailFolders/inbox/messages?$filter=${filter}&$orderby=receivedDateTime asc&$top=20&$select=${select}`,
     accessToken,
     { Prefer: 'outlook.body-content-type="text"' }
   );
   const results: IncomingEmail[] = [];
+  let lastPosition = "";
+  let filtered = 0;
   for (const message of list.value ?? []) {
+    // Liste triée par date croissante : le dernier vu = position max.
+    if (message.receivedDateTime) lastPosition = message.receivedDateTime;
     const email = message.from?.emailAddress?.address?.toLowerCase() ?? "";
     if (!email || email === ownAddress.toLowerCase()) continue;
+    // Graph ne renvoie pas les en-têtes bruts ici : le classement
+    // « pêle-mêle » de Microsoft + l'adresse d'expéditeur font le tri.
+    if (
+      message.inferenceClassification === "other" ||
+      isAutomatedEmail(email, () => "")
+    ) {
+      filtered += 1;
+      continue;
+    }
     const content = message.body?.content ?? "";
     results.push({
       threadId: message.conversationId ?? message.id,
@@ -450,7 +520,7 @@ export async function listNewOutlookMessages(
       position: message.receivedDateTime ?? "",
     });
   }
-  return results;
+  return { messages: results, lastPosition, filtered };
 }
 
 // ------------------------------------------------------------

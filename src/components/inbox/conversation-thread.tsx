@@ -6,11 +6,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bot, Loader2, Send, UserRound } from "lucide-react";
+import { Bot, Loader2, Send, Trash2, UserRound } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChannelLabel } from "@/components/inbox/channel-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ConversationStatusBadge } from "@/components/shared/status-badge";
 import { deliversForReal, sendReply } from "@/lib/services/inbox-service";
 import { formatDateTime } from "@/lib/core/format";
@@ -21,10 +22,12 @@ export function ConversationThread({
   conversation,
   messages,
   timezone,
+  onDelete,
 }: {
   conversation: InboxConversation;
   messages: InboxMessage[];
   timezone: string;
+  onDelete?: () => Promise<void>;
 }) {
   const { provider } = useAppData();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -69,7 +72,27 @@ export function ConversationThread({
               )}
             </p>
           </div>
-          <ConversationStatusBadge status={conversation.status} />
+          <div className="flex items-center gap-1.5">
+            <ConversationStatusBadge status={conversation.status} />
+            {onDelete && (
+              <ConfirmDialog
+                title="Supprimer cette conversation ?"
+                description={`La conversation avec ${conversation.customer_name} et tous ses messages seront définitivement supprimés.`}
+                confirmLabel="Supprimer"
+                destructive
+                onConfirm={onDelete}
+                trigger={
+                  <button
+                    type="button"
+                    aria-label="Supprimer la conversation"
+                    className="rounded-md p-1.5 text-muted-foreground/70 transition hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </button>
+                }
+              />
+            )}
+          </div>
         </div>
         {conversation.subject && (
           <p className="mt-1 truncate text-sm text-foreground/80">

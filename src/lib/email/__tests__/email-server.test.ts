@@ -6,6 +6,7 @@ import {
   buildGmailReplyMime,
   extractGmailBody,
   htmlToText,
+  isAutomatedEmail,
   parseFromHeader,
   signEmailOauthState,
   verifyEmailOauthState,
@@ -15,6 +16,75 @@ const ORG = "11111111-2222-4333-8444-555555555555";
 
 beforeAll(() => {
   process.env.WEBHOOK_INGEST_SECRET = "secret-de-test";
+});
+
+describe("isAutomatedEmail (filtre anti-bruit)", () => {
+  const noHeaders = () => "";
+  const headers = (map: Record<string, string>) => (name: string) =>
+    map[
+      Object.keys(map).find((k) => k.toLowerCase() === name.toLowerCase()) ?? ""
+    ] ?? "";
+
+  it("écarte les adresses jamais humaines", () => {
+    for (const email of [
+      "noreply@distrokid.com",
+      "no-reply@accounts.google.com",
+      "no_reply@service.fr",
+      "do-not-reply@bank.pf",
+      "notifications@github.com",
+      "notification@facebook.com",
+      "newsletter@shop.com",
+      "news@ngrok.com",
+      "mailer-daemon@googlemail.com",
+      "marketing@uber.com",
+      "updates@linkedin.com",
+      "alerts@site.io",
+    ]) {
+      expect(isAutomatedEmail(email, noHeaders), email).toBe(true);
+    }
+  });
+
+  it("laisse passer les expéditeurs humains sans en-tête automatique", () => {
+    for (const email of [
+      "jean.dupont@gmail.com",
+      "contact@hotel-tiare.pf",
+      "info@mairie-papeete.pf",
+      "moana@hotmail.com",
+      "replymaster@x.com", // contient « reply » mais pas en préfixe no-reply
+    ]) {
+      expect(isAutomatedEmail(email, noHeaders), email).toBe(false);
+    }
+  });
+
+  it("écarte newsletters et promos via List-Unsubscribe", () => {
+    expect(
+      isAutomatedEmail(
+        "offers@ubereats.com",
+        headers({ "List-Unsubscribe": "<https://u.example/x>" })
+      )
+    ).toBe(true);
+  });
+
+  it("écarte les messages machine (Auto-Submitted, Precedence: bulk)", () => {
+    expect(
+      isAutomatedEmail(
+        "verif@service.com",
+        headers({ "Auto-Submitted": "auto-generated" })
+      )
+    ).toBe(true);
+    expect(
+      isAutomatedEmail("x@y.com", headers({ Precedence: "bulk" }))
+    ).toBe(true);
+    expect(
+      isAutomatedEmail("x@y.com", headers({ "Feedback-ID" : "c:123:d" }))
+    ).toBe(true);
+  });
+
+  it("Auto-Submitted: no n'est pas un motif d'exclusion", () => {
+    expect(
+      isAutomatedEmail("jean@gmail.com", headers({ "Auto-Submitted": "no" }))
+    ).toBe(false);
+  });
 });
 
 describe("state OAuth signé", () => {

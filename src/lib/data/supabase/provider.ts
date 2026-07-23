@@ -972,6 +972,16 @@ export class SupabaseDataProvider implements DataProvider {
       this.notify();
     },
 
+    // Messages et fils email suivent par cascade (FK on delete cascade).
+    deleteConversation: async (conversationId: string): Promise<void> => {
+      const { error } = await this.raw
+        .from("inbox_conversations")
+        .delete()
+        .eq("id", conversationId);
+      if (error) throw new Error("Suppression impossible : " + error.message);
+      this.notify();
+    },
+
     createConversation: async (input) => {
       const ctx = await this.ensureContext();
       if (!ctx) throw new Error("Aucune organisation active");
