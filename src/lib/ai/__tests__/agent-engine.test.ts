@@ -69,6 +69,55 @@ describe("parseRequestPeriod", () => {
   it("renvoie null sans expression de date", () => {
     expect(parseRequestPeriod("bonjour, avez-vous des machines ?", TZ, NOW)).toBeNull();
   });
+
+  it("comprend « pour le 27/07/26 » (date numérique avec année)", () => {
+    const period = parseRequestPeriod(
+      "Réservation machine pour le 27/07/26 si possible",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    expect(period?.endAt).toBe("2026-07-27T17:00");
+  });
+
+  it("comprend « le 27/07 » sans année (prochaine occurrence)", () => {
+    const period = parseRequestPeriod("dispo le 27/07 ?", TZ, NOW);
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    // Date déjà passée cette année → l'année prochaine.
+    const past = parseRequestPeriod("dispo le 03/01 ?", TZ, NOW);
+    expect(past?.startAt).toBe("2027-01-03T08:00");
+  });
+
+  it("comprend « du 27/07 au 29/07/2026 » (plage numérique)", () => {
+    const period = parseRequestPeriod(
+      "je voudrais louer du 27/07 au 29/07/2026",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    expect(period?.endAt).toBe("2026-07-29T17:00");
+  });
+
+  it("comprend la forme compacte « pour le 260726 »", () => {
+    const period = parseRequestPeriod(
+      "j'aimerais louer votre machine pour le 260726",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-26T08:00");
+    expect(period?.endAt).toBe("2026-07-26T17:00");
+  });
+
+  it("ne confond JAMAIS une référence de matériel avec une date", () => {
+    // « Puzzi 10/1 » et « 8/1 » : pas de déclencheur devant les chiffres,
+    // pas d'année → aucune date fantôme.
+    expect(
+      parseRequestPeriod("le Kärcher Puzzi 10/1 est-il dispo ?", TZ, NOW)
+    ).toBeNull();
+    expect(
+      parseRequestPeriod("je préfère le Puzzi 8/1 merci", TZ, NOW)
+    ).toBeNull();
+  });
 });
 
 describe("agent-engine — analyse des conversations du seed", () => {
