@@ -23,6 +23,7 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/onboarding",
   "/print",
+  "/storefront",
 ];
 
 const AUTH_PAGES = ["/login", "/signup"];
@@ -92,6 +93,7 @@ export const config = {
     "/settings/:path*",
     "/onboarding/:path*",
     "/print/:path*",
+    "/storefront/:path*",
     "/login",
     "/signup",
   ],

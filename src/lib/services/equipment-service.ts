@@ -41,6 +41,7 @@ function toDraft(values: EquipmentInput): EquipmentDraft {
     status: values.status,
     usageInstructions: values.usageInstructions ?? "",
     internalNotes: values.internalNotes ?? "",
+    photoUrl: values.photoUrl,
   };
 }
 

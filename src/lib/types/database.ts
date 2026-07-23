@@ -88,6 +88,10 @@ export type Database = {
           phone: string | null;
           email: string | null;
           address: string | null;
+          /** Adresse publique de la vitrine : /reserver/<slug>. */
+          slug: string | null;
+          storefront_welcome: string | null;
+          storefront_visible: boolean;
           onboarding_completed_at: string | null;
           created_by: string | null;
           created_at: string;
@@ -106,6 +110,9 @@ export type Database = {
           phone?: string | null;
           email?: string | null;
           address?: string | null;
+          slug?: string | null;
+          storefront_welcome?: string | null;
+          storefront_visible?: boolean;
           onboarding_completed_at?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -124,6 +131,9 @@ export type Database = {
           phone?: string | null;
           email?: string | null;
           address?: string | null;
+          slug?: string | null;
+          storefront_welcome?: string | null;
+          storefront_visible?: boolean;
           onboarding_completed_at?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -198,6 +208,7 @@ export type Database = {
           status: EquipmentStatus;
           usage_instructions: string | null;
           internal_notes: string | null;
+          photo_url: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -218,6 +229,7 @@ export type Database = {
           status?: EquipmentStatus;
           usage_instructions?: string | null;
           internal_notes?: string | null;
+          photo_url?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -238,6 +250,7 @@ export type Database = {
           status?: EquipmentStatus;
           usage_instructions?: string | null;
           internal_notes?: string | null;
+          photo_url?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

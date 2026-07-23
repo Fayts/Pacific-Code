@@ -124,6 +124,17 @@ export class MockDataProvider implements DataProvider {
     return () => this.listeners.delete(listener);
   }
 
+  async uploadEquipmentPhoto(blob: Blob): Promise<string> {
+    // Mode mock : la photo (déjà compressée) vit en data URL dans le
+    // navigateur, comme le reste des données.
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Photo illisible"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async resetDemoData(): Promise<void> {
     const session = this.db?.session ?? null;
     const users = this.db?.users ?? [];
@@ -280,6 +291,7 @@ export class MockDataProvider implements DataProvider {
         status: draft.status,
         usage_instructions: draft.usageInstructions || null,
         internal_notes: draft.internalNotes || null,
+        photo_url: draft.photoUrl ?? null,
         created_by: db.session?.userId ?? null,
         created_at: nowIso,
         updated_at: nowIso,
@@ -306,6 +318,7 @@ export class MockDataProvider implements DataProvider {
       item.status = draft.status;
       item.usage_instructions = draft.usageInstructions || null;
       item.internal_notes = draft.internalNotes || null;
+      if (draft.photoUrl !== undefined) item.photo_url = draft.photoUrl;
       this.touch(item);
       this.persist();
       return item;

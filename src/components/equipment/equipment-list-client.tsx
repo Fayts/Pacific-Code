@@ -47,8 +47,17 @@ function normalize(value: string): string {
     .toLowerCase();
 }
 
-function Thumbnail() {
-  // Pas de stockage de photos en mode démo : visuel de substitution.
+function Thumbnail({ src, alt }: { src: string | null; alt: string }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        className="size-11 shrink-0 rounded-md object-cover ring-1 ring-pc-deep/10"
+      />
+    );
+  }
   return (
     <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-muted">
       <Package className="size-5 text-muted-foreground/50" aria-hidden />
@@ -240,7 +249,7 @@ export function EquipmentListClient() {
                 {filteredRows.map(({ item, display, nextAvailability }) => (
                   <TableRow key={item.id}>
                     <TableCell className="pl-3">
-                      <Thumbnail />
+                      <Thumbnail src={item.photo_url} alt={item.name} />
                     </TableCell>
                     <TableCell>
                       <Link
@@ -289,7 +298,7 @@ export function EquipmentListClient() {
                 href={`/equipment/${item.id}`}
                 className="flex gap-3 rounded-xl bg-card p-3 shadow-sm shadow-pc-deep/[0.04] ring-1 ring-pc-deep/[0.08] transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-pc-deep/[0.06]"
               >
-                <Thumbnail />
+                <Thumbnail src={item.photo_url} alt={item.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

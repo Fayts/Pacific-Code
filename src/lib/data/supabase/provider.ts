@@ -149,6 +149,22 @@ export class SupabaseDataProvider implements DataProvider {
     return data.session?.access_token ?? null;
   }
 
+  async uploadEquipmentPhoto(blob: Blob): Promise<string> {
+    const ctx = await this.ensureContext();
+    if (!ctx) throw new Error("Aucune organisation active");
+    // Chemin préfixé par l'organisation : la politique Storage n'accepte
+    // que les membres de l'org (lecture publique, bucket equipment-photos).
+    const path = `${ctx.orgId}/${crypto.randomUUID()}.jpg`;
+    const { error } = await this.client.storage
+      .from("equipment-photos")
+      .upload(path, blob, { contentType: "image/jpeg" });
+    if (error) throw new Error(error.message);
+    const { data } = this.client.storage
+      .from("equipment-photos")
+      .getPublicUrl(path);
+    return data.publicUrl;
+  }
+
   async resetDemoData(): Promise<void> {
     throw new Error(
       "La réinitialisation n'existe qu'en mode démonstration — ici, vos données sont réelles."
@@ -388,6 +404,7 @@ export class SupabaseDataProvider implements DataProvider {
       status: draft.status,
       usage_instructions: draft.usageInstructions || null,
       internal_notes: draft.internalNotes || null,
+      photo_url: draft.photoUrl ?? null,
       created_by: userId,
     };
   }
@@ -438,6 +455,9 @@ export class SupabaseDataProvider implements DataProvider {
           status: draft.status,
           usage_instructions: draft.usageInstructions || null,
           internal_notes: draft.internalNotes || null,
+          ...(draft.photoUrl !== undefined
+            ? { photo_url: draft.photoUrl }
+            : {}),
         })
         .eq("id", id)
         .select("*")
@@ -501,6 +521,7 @@ export class SupabaseDataProvider implements DataProvider {
         status: "available",
         usageInstructions: source.usage_instructions ?? "",
         internalNotes: source.internal_notes ?? "",
+        photoUrl: source.photo_url,
       });
     },
   };
