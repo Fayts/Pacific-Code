@@ -302,6 +302,38 @@ export function BookingForm({
     );
   };
 
+  // --- Accessoires liés (suggérés sous chaque matériel coché) ---
+  const [addonLinks, setAddonLinks] = useState<
+    Array<{ equipment_id: string; addon_id: string }>
+  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    provider.equipment
+      .listAddonLinks()
+      .then((links) => {
+        if (!cancelled) setAddonLinks(links);
+      })
+      .catch(() => {
+        // Pas de suggestions : le formulaire reste pleinement utilisable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [provider]);
+
+  const addonsByEquipment = useMemo(() => {
+    const map = new Map<string, EquipmentOption[]>();
+    for (const link of addonLinks) {
+      const addon = equipmentById.get(link.addon_id);
+      if (!addon || addon.status !== "available") continue;
+      map.set(link.equipment_id, [
+        ...(map.get(link.equipment_id) ?? []),
+        addon,
+      ]);
+    }
+    return map;
+  }, [addonLinks, equipmentById]);
+
   const setQuantity = (equipmentId: string, raw: string, max: number) => {
     const parsed = Math.trunc(Number(raw));
     const quantity = Math.min(
@@ -545,6 +577,42 @@ export function BookingForm({
                               </span>
                             </div>
                           )}
+                          {selection &&
+                            (addonsByEquipment.get(eq.id) ?? []).filter(
+                              (addon) =>
+                                !items.some((i) => i.equipmentId === addon.id)
+                            ).length > 0 && (
+                              <div
+                                className="mt-2 flex flex-wrap items-center gap-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-xs text-muted-foreground">
+                                  Accessoires :
+                                </span>
+                                {(addonsByEquipment.get(eq.id) ?? [])
+                                  .filter(
+                                    (addon) =>
+                                      !items.some(
+                                        (i) => i.equipmentId === addon.id
+                                      )
+                                  )
+                                  .map((addon) => (
+                                    <button
+                                      key={addon.id}
+                                      type="button"
+                                      onClick={() => toggleEquipment(addon.id)}
+                                      className="inline-flex items-center gap-1 rounded-full border border-pc-turquoise/40 bg-pc-turquoise/[0.07] px-2 py-0.5 text-xs text-foreground transition hover:bg-pc-turquoise/[0.15]"
+                                    >
+                                      <Plus className="size-3" aria-hidden />
+                                      {addon.name} —{" "}
+                                      {formatMoney(addon.daily_price, currency)}
+                                      {addon.pricing_mode === "flat"
+                                        ? " forfait"
+                                        : " / j"}
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
                         </div>
                       </div>
                     );

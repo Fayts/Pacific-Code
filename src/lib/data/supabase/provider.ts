@@ -521,6 +521,55 @@ export class SupabaseDataProvider implements DataProvider {
         photoUrl: source.photo_url,
       });
     },
+
+    listAddons: async (equipmentId: string): Promise<EquipmentItem[]> => {
+      const { data: links } = await this.client
+        .from("equipment_addons")
+        .select("addon_id")
+        .eq("equipment_id", equipmentId);
+      const ids = (links ?? []).map((l) => l.addon_id);
+      if (ids.length === 0) return [];
+      const { data } = await this.client
+        .from("equipment_items")
+        .select("*")
+        .in("id", ids)
+        .is("archived_at", null)
+        .order("name");
+      return (data ?? []) as EquipmentItem[];
+    },
+
+    setAddons: async (equipmentId: string, addonIds: string[]): Promise<void> => {
+      const ctx = await this.ensureContext();
+      if (!ctx) throw new Error("Aucune organisation active");
+      const cleaned = [...new Set(addonIds)].filter((id) => id !== equipmentId);
+      // Remplacement complet : suppression puis réinsertion (RLS s'applique).
+      const { error: deleteError } = await this.client
+        .from("equipment_addons")
+        .delete()
+        .eq("equipment_id", equipmentId);
+      if (deleteError) throw new Error(deleteError.message);
+      if (cleaned.length > 0) {
+        const { error } = await this.client.from("equipment_addons").insert(
+          cleaned.map((addonId) => ({
+            organization_id: ctx.orgId,
+            equipment_id: equipmentId,
+            addon_id: addonId,
+          }))
+        );
+        if (error) throw new Error(error.message);
+      }
+      this.notify();
+    },
+
+    listAddonLinks: async () => {
+      const { data } = await this.client
+        .from("equipment_addons")
+        .select("equipment_id, addon_id");
+      return (data ?? []).map((l) => ({
+        equipment_id: l.equipment_id,
+        addon_id: l.addon_id,
+      }));
+    },
   };
 
   // ----------------------------------------------------------

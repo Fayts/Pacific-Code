@@ -146,6 +146,12 @@ export interface EquipmentRepository {
   archive(id: string): Promise<{ ok: boolean; error?: string }>;
   unarchive(id: string): Promise<void>;
   duplicate(id: string): Promise<EquipmentItem | null>;
+  /** Accessoires payants proposés avec ce matériel (fiches non archivées). */
+  listAddons(equipmentId: string): Promise<EquipmentItem[]>;
+  /** Remplace l'ensemble des accessoires liés à ce matériel. */
+  setAddons(equipmentId: string, addonIds: string[]): Promise<void>;
+  /** Tous les liens matériel → accessoire de l'organisation. */
+  listAddonLinks(): Promise<Array<{ equipment_id: string; addon_id: string }>>;
 }
 
 export interface CustomerRepository {

@@ -273,6 +273,45 @@ export type Database = {
           },
         ];
       };
+      equipment_addons: {
+        Row: {
+          id: string;
+          organization_id: string;
+          equipment_id: string;
+          addon_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          equipment_id: string;
+          addon_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          equipment_id?: string;
+          addon_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "equipment_addons_equipment_id_fkey";
+            columns: ["equipment_id"];
+            isOneToOne: false;
+            referencedRelation: "equipment_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "equipment_addons_addon_id_fkey";
+            columns: ["addon_id"];
+            isOneToOne: false;
+            referencedRelation: "equipment_items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       equipment_images: {
         Row: {
           id: string;
@@ -857,6 +896,7 @@ export type Organization = Tables<"organizations">;
 export type OrganizationMember = Tables<"organization_members">;
 export type EquipmentCategory = Tables<"equipment_categories">;
 export type EquipmentItem = Tables<"equipment_items">;
+export type EquipmentAddon = Tables<"equipment_addons">;
 export type EquipmentImage = Tables<"equipment_images">;
 export type Customer = Tables<"customers">;
 export type Booking = Tables<"bookings">;

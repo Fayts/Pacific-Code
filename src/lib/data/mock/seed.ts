@@ -23,9 +23,10 @@ import type {
 } from "@/lib/types/inbox";
 import type { SessionUser } from "@/lib/data/repositories";
 
+// v5 : accessoires payants liés au matériel (equipmentAddons).
 // v4 : réglages de notification (notify_new_messages, notify_email).
 // Un document localStorage d'une version antérieure est re-seedé.
-export const MOCK_DB_VERSION = 4;
+export const MOCK_DB_VERSION = 5;
 
 // IDs stables (format UUID pour rester compatibles avec les validations zod).
 export const ORG_ID = "11111111-1111-4111-8111-111111111111";
@@ -34,11 +35,13 @@ const CAT_INJECTEUR = "31111111-1111-4111-8111-111111111111";
 const CAT_PACK = "32222222-2222-4222-8222-222222222222";
 const CAT_HP = "33333333-3333-4333-8333-333333333333";
 const CAT_PRESTA = "34444444-4444-4444-8444-444444444444";
+const CAT_ACCESSOIRES = "35555555-5555-4555-8555-555555555555";
 export const EQ_PUZZI10 = "41111111-1111-4111-8111-111111111111";
 export const EQ_PUZZI8 = "42222222-2222-4222-8222-222222222222";
 export const EQ_PACK = "43333333-3333-4333-8333-333333333333";
 export const EQ_K5 = "44444444-4444-4444-8444-444444444444";
 export const EQ_PRESTA_MATELAS = "45555555-5555-4555-8555-555555555555";
+export const EQ_PASTILLES = "46666666-6666-4666-8666-666666666666";
 export const CUST_JEAN = "51111111-1111-4111-8111-111111111111";
 export const CUST_MOANA = "52222222-2222-4222-8222-222222222222";
 export const CUST_HOTEL = "53333333-3333-4333-8333-333333333333";
@@ -64,6 +67,11 @@ export type MockDb = {
   organization: Organization;
   categories: EquipmentCategory[];
   equipment: EquipmentItem[];
+  equipmentAddons: Array<{
+    id: string;
+    equipment_id: string;
+    addon_id: string;
+  }>;
   customers: Customer[];
   bookings: Booking[];
   bookingItems: BookingItem[];
@@ -137,6 +145,14 @@ export function buildSeed(now: Date = new Date()): MockDb {
       organization_id: ORG_ID,
       name: "Prestations de nettoyage",
       description: "Nettoyage effectué par nos soins, au forfait",
+      created_at: created,
+      updated_at: created,
+    },
+    {
+      id: CAT_ACCESSOIRES,
+      organization_id: ORG_ID,
+      name: "Accessoires",
+      description: "Suppléments payants proposés avec le matériel",
       created_at: created,
       updated_at: created,
     },
@@ -241,6 +257,38 @@ export function buildSeed(now: Date = new Date()): MockDb {
       usage_instructions: "",
       internal_notes: "Données fictives — forfait, ne dépend pas de la durée.",
       photo_url: null,
+    },
+    {
+      ...equipmentDefaults,
+      id: EQ_PASTILLES,
+      category_id: CAT_ACCESSOIRES,
+      name: "Pastilles détergentes RM 760 (lot de 2)",
+      internal_ref: "ACC-RM760",
+      description:
+        "Lot de 2 pastilles supplémentaires pour injecteur-extracteur. Deux pastilles sont incluses avec la machine — ce supplément couvre les grandes surfaces.",
+      daily_price: 990,
+      pricing_mode: "flat",
+      deposit_amount: 0,
+      quantity_total: 20,
+      min_rental_days: 1,
+      status: "available",
+      usage_instructions: "",
+      internal_notes: "Données fictives — accessoire vendu en supplément.",
+      photo_url: null,
+    },
+  ];
+
+  // Accessoires proposés avec les injecteurs-extracteurs.
+  const equipmentAddons = [
+    {
+      id: "c1111111-1111-4111-8111-111111111111",
+      equipment_id: EQ_PUZZI10,
+      addon_id: EQ_PASTILLES,
+    },
+    {
+      id: "c2222222-2222-4222-8222-222222222222",
+      equipment_id: EQ_PUZZI8,
+      addon_id: EQ_PASTILLES,
     },
   ];
 
@@ -674,6 +722,7 @@ export function buildSeed(now: Date = new Date()): MockDb {
     organization,
     categories,
     equipment,
+    equipmentAddons,
     customers,
     bookings,
     bookingItems,
