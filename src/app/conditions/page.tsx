@@ -120,10 +120,10 @@ export default function TermsPage() {
           <p>
             Pour toute question :{" "}
             <a
-              href="mailto:fayts987@gmail.com"
+              href="mailto:pacificrentclean@gmail.com"
               className="text-primary hover:underline"
             >
-              fayts987@gmail.com
+              pacificrentclean@gmail.com
             </a>
             .
           </p>

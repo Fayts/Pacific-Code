@@ -63,10 +63,10 @@ export default function PrivacyPolicyPage() {
             Responsable de la plateforme : Pacific Code — Polynésie française.
             Contact :{" "}
             <a
-              href="mailto:fayts987@gmail.com"
+              href="mailto:pacificrentclean@gmail.com"
               className="text-primary hover:underline"
             >
-              fayts987@gmail.com
+              pacificrentclean@gmail.com
             </a>
             .
           </p>
@@ -178,10 +178,10 @@ export default function PrivacyPolicyPage() {
             <li>
               <strong>Vous êtes loueur</strong> : écrivez-nous à{" "}
               <a
-                href="mailto:fayts987@gmail.com"
+                href="mailto:pacificrentclean@gmail.com"
                 className="text-primary hover:underline"
               >
-                fayts987@gmail.com
+                pacificrentclean@gmail.com
               </a>{" "}
               depuis l&apos;adresse email de votre compte — suppression complète
               de votre espace sous 30 jours.
