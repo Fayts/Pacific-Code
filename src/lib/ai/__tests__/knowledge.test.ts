@@ -135,6 +135,7 @@ describe("knowledge — branchement dans le moteur", () => {
       provider.agentSettings.get(),
       provider.inbox.listMessages(conversation.id),
     ]);
+    if (!organization) throw new Error("organisation introuvable");
     return analyzeConversation(
       { conversation, messages },
       { provider, organization, settings, now: NOW }
