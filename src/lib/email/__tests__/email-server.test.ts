@@ -9,9 +9,28 @@ import {
   htmlToText,
   isAutomatedEmail,
   parseFromHeader,
+  renderReplyHtml,
   signEmailOauthState,
   verifyEmailOauthState,
 } from "@/lib/email/server";
+
+/** Décode toutes les parties base64 d'un MIME multipart (repli + HTML). */
+function decodeParts(mime: string): { plain: string; html: string } {
+  const sections = mime.split(/--pc_[a-f0-9]+(?:--)?\r\n/);
+  let plain = "";
+  let html = "";
+  for (const section of sections) {
+    const [head, ...rest] = section.split("\r\n\r\n");
+    if (rest.length === 0) continue;
+    const decoded = Buffer.from(
+      rest.join("\r\n\r\n").replace(/\r\n/g, ""),
+      "base64"
+    ).toString("utf8");
+    if (/text\/plain/.test(head)) plain = decoded;
+    if (/text\/html/.test(head)) html = decoded;
+  }
+  return { plain, html };
+}
 
 const ORG = "11111111-2222-4333-8444-555555555555";
 
@@ -209,10 +228,12 @@ describe("buildGmailReplyMime", () => {
     expect(mime).toContain("Subject: Re: Location scooter");
     expect(mime).toContain("In-Reply-To: <abc123@mail.gmail.com>");
     expect(mime).toContain("References: <abc123@mail.gmail.com>");
-    const bodyB64 = mime.split("\r\n\r\n")[1];
-    expect(Buffer.from(bodyB64, "base64").toString("utf8")).toBe(
-      "C'est disponible !"
-    );
+    // multipart/alternative : le texte brut ET le HTML portent le message.
+    expect(mime).toContain("multipart/alternative");
+    const { plain, html } = decodeParts(mime);
+    expect(plain).toBe("C'est disponible !");
+    expect(html).toContain("C'est disponible !");
+    expect(html).toContain("<p");
   });
 
   it("ne double pas le préfixe Re: et encode les sujets accentués", () => {
@@ -227,5 +248,44 @@ describe("buildGmailReplyMime", () => {
     expect(ascii).toContain("Subject: Re: Simple");
     const empty = buildGmailReplyMime({ to: "a@b.pf", subject: "  ", body: "x" });
     expect(empty).toContain("Subject: Re: votre message");
+  });
+});
+
+describe("renderReplyHtml (mise en forme des réponses)", () => {
+  it("un paragraphe par bloc séparé par une ligne vide", () => {
+    const html = renderReplyHtml("Bonjour 👋\n\nC'est dispo.\n\nCordialement,");
+    expect(html.match(/<p /g) ?? []).toHaveLength(3);
+    expect(html).toContain("Bonjour 👋");
+  });
+
+  it("échappe le HTML du message client (aucune injection)", () => {
+    const html = renderReplyHtml("Réponse <script>alert(1)</script> & co");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).toContain("&amp; co");
+  });
+
+  it("détache la signature (dernière ligne courte) par un filet", () => {
+    const html = renderReplyHtml(
+      "Bonjour,\n\nVotre matériel est prêt.\n\nPacific Rent & Clean"
+    );
+    expect(html).toContain("border-top");
+    // La signature n'est pas confondue avec une phrase normale.
+    expect(html).toContain("Pacific Rent &amp; Clean");
+  });
+
+  it("pose le filet lagon en tête (identité de marque, sans image)", () => {
+    const html = renderReplyHtml("Bonjour,\n\nMerci de votre message !");
+    expect(html).toContain("linear-gradient(90deg,#0e7c86,#3bb0a8)");
+  });
+
+  it("conserve les retours à la ligne simples en <br>", () => {
+    const html = renderReplyHtml("Ligne A\nLigne B\n\nFin");
+    expect(html).toContain("Ligne A<br>Ligne B");
+  });
+
+  it("ne prend aucune police ni image externe (sobre, anti-spam)", () => {
+    const html = renderReplyHtml("Bonjour,\n\nMerci !");
+    expect(html).not.toMatch(/<img|https?:|@import|<link/);
   });
 });

@@ -6,7 +6,7 @@
 // /api/channels/email/poll toutes les 2 minutes — pas de webhook à
 // enregistrer chez Google/Microsoft, pas d'abonnement à renouveler.
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 export type EmailProvider = "gmail" | "outlook";
 
@@ -537,6 +537,60 @@ function encodeHeader(value: string): string {
   return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
 }
 
+/** Échappe un texte pour une insertion sûre dans du HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Transforme la réponse (texte brut assemblé par l'agent) en corps d'e-mail
+ * HTML proprement mis en forme : paragraphes espacés, typographie lisible,
+ * signature discrète détachée par un filet. Le rendu reste sobre — styles
+ * EN LIGNE (les clients mail ignorent les feuilles de style), aucune image,
+ * aucune police externe — pour s'afficher partout et ne pas déclencher les
+ * filtres anti-spam. Le texte brut d'origine reste envoyé en parallèle.
+ */
+export function renderReplyHtml(body: string): string {
+  const blocks = body
+    .split(/\r?\n\s*\r?\n/) // paragraphes = séparés par une ligne vide
+    .map((block) => block.trim())
+    .filter(Boolean);
+  const lastIndex = blocks.length - 1;
+
+  const paragraphs = blocks.map((block, index) => {
+    const html = escapeHtml(block).replace(/\r?\n/g, "<br>");
+    // Dernière ligne courte sans ponctuation finale = signature : détachée
+    // par un filet et posée aux couleurs de la marque (lagon).
+    const isSignature =
+      index === lastIndex &&
+      blocks.length > 1 &&
+      block.length <= 70 &&
+      !/[.!?…]$/.test(block);
+    if (isSignature) {
+      return `<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #e4eaed;color:#0e7c86;font-size:13px;font-weight:600;">${html}</p>`;
+    }
+    return `<p style="margin:0 0 15px;">${html}</p>`;
+  });
+
+  return [
+    '<div style="background:#f4f7f8;padding:24px 0;">',
+    '<div style="max-width:544px;margin:0 auto;background:#ffffff;border-radius:14px;',
+    "overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',",
+    "Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#17323d;",
+    'box-shadow:0 1px 3px rgba(20,50,61,.06);">',
+    // Filet dégradé lagon (identité de l'app), sans image.
+    '<div style="height:4px;background:linear-gradient(90deg,#0e7c86,#3bb0a8);"></div>',
+    '<div style="padding:26px 30px 28px;">',
+    ...paragraphs,
+    "</div>",
+    "</div>",
+    "</div>",
+  ].join("");
+}
+
 /** Message MIME complet d'une réponse Gmail (threading inclus). */
 export function buildGmailReplyMime(input: {
   to: string;
@@ -547,19 +601,48 @@ export function buildGmailReplyMime(input: {
   const subject = input.subject.trim().toLowerCase().startsWith("re:")
     ? input.subject.trim()
     : `Re: ${input.subject.trim() || "votre message"}`;
-  const lines = [
+  const headers = [
     `To: ${input.to}`,
     `Subject: ${encodeHeader(subject)}`,
     ...(input.inReplyTo
       ? [`In-Reply-To: ${input.inReplyTo}`, `References: ${input.inReplyTo}`]
       : []),
+  ];
+  return buildMultipartAlternative(headers, input.body);
+}
+
+/**
+ * Assemble un corps multipart/alternative : le texte brut (repli universel)
+ * ET la version HTML. Les clients modernes affichent le HTML, les autres
+ * retombent proprement sur le texte.
+ */
+function buildMultipartAlternative(
+  headers: string[],
+  body: string
+): string {
+  const boundary = `pc_${randomUUID().replace(/-/g, "")}`;
+  const b64 = (value: string) =>
+    Buffer.from(value, "utf8")
+      .toString("base64")
+      .replace(/(.{76})/g, "$1\r\n");
+  return [
+    ...headers,
     "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    Buffer.from(input.body, "utf8").toString("base64"),
-  ];
-  return lines.join("\r\n");
+    b64(body),
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64(renderReplyHtml(body)),
+    `--${boundary}--`,
+    "",
+  ].join("\r\n");
 }
 
 export async function sendGmailReply(
@@ -663,7 +746,13 @@ export async function sendOutlookReply(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ comment: input.body }),
+      // `message.body` en HTML pour le même rendu soigné que Gmail ; Graph
+      // conserve le fil (threading) et cite l'original automatiquement.
+      body: JSON.stringify({
+        message: {
+          body: { contentType: "HTML", content: renderReplyHtml(input.body) },
+        },
+      }),
     }
   );
   // Graph répond 202 Accepted sans corps.
