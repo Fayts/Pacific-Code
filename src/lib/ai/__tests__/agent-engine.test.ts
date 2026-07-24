@@ -14,6 +14,7 @@ import {
 import {
   analyzeConversation,
   parseRequestPeriod,
+  stripQuotedReply,
   type AgentAnalysis,
 } from "@/lib/ai/agent-engine";
 import { formatMoney } from "@/lib/core/format";
@@ -68,6 +69,81 @@ describe("parseRequestPeriod", () => {
 
   it("renvoie null sans expression de date", () => {
     expect(parseRequestPeriod("bonjour, avez-vous des machines ?", TZ, NOW)).toBeNull();
+  });
+
+  it("comprend « pour le 27/07/26 » (date numérique avec année)", () => {
+    const period = parseRequestPeriod(
+      "Réservation machine pour le 27/07/26 si possible",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    expect(period?.endAt).toBe("2026-07-27T17:00");
+  });
+
+  it("comprend « le 27/07 » sans année (prochaine occurrence)", () => {
+    const period = parseRequestPeriod("dispo le 27/07 ?", TZ, NOW);
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    // Date déjà passée cette année → l'année prochaine.
+    const past = parseRequestPeriod("dispo le 03/01 ?", TZ, NOW);
+    expect(past?.startAt).toBe("2027-01-03T08:00");
+  });
+
+  it("comprend « du 27/07 au 29/07/2026 » (plage numérique)", () => {
+    const period = parseRequestPeriod(
+      "je voudrais louer du 27/07 au 29/07/2026",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    expect(period?.endAt).toBe("2026-07-29T17:00");
+  });
+
+  it("comprend la forme compacte « pour le 260726 »", () => {
+    const period = parseRequestPeriod(
+      "j'aimerais louer votre machine pour le 260726",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-26T08:00");
+    expect(period?.endAt).toBe("2026-07-26T17:00");
+  });
+
+  it("ne confond JAMAIS une référence de matériel avec une date", () => {
+    // « Puzzi 10/1 » et « 8/1 » : pas de déclencheur devant les chiffres,
+    // pas d'année → aucune date fantôme.
+    expect(
+      parseRequestPeriod("le Kärcher Puzzi 10/1 est-il dispo ?", TZ, NOW)
+    ).toBeNull();
+    expect(
+      parseRequestPeriod("je préfère le Puzzi 8/1 merci", TZ, NOW)
+    ).toBeNull();
+  });
+
+  it("comprend « le 27 07 26 au 28 07 26 » (séparateur espace, cas réel)", () => {
+    const period = parseRequestPeriod(
+      "Bonjour j'aimerais réserver votre machine puzzi 10/1 le 27 07 26 au 28 07 26. Si possi le a 08h00",
+      TZ,
+      NOW
+    );
+    expect(period?.startAt).toBe("2026-07-27T08:00");
+    expect(period?.endAt).toBe("2026-07-28T17:00");
+    // Le déclencheur + l'année restent exigés : deux nombres seuls ne font
+    // pas une date.
+    expect(parseRequestPeriod("il m'en faut le 2 3 stp", TZ, NOW)).toBeNull();
+  });
+});
+
+describe("stripQuotedReply", () => {
+  it("retire l'attribution Gmail (même coupée par un retour à la ligne) et les lignes citées", () => {
+    const body =
+      "Je vais prendre le standard svpl\r\n\r\nLe jeu. 23 juil. 2026, 10:10, Pacific Rent&Clean <pacificrentclean@gmail.com>\r\na écrit :\r\n\r\n> Bonne nouvelle, la Kärcher Puzzi 10/1 est disponible du 27/07 au 28/07.\r\n> Nous proposons deux versions.";
+    expect(stripQuotedReply(body)).toBe("Je vais prendre le standard svpl");
+  });
+
+  it("conserve l'original si le message n'était qu'une citation", () => {
+    const onlyQuote = "> tout le message est cité\r\n> rien d'autre";
+    expect(stripQuotedReply(onlyQuote)).toBe(onlyQuote.trim());
   });
 });
 

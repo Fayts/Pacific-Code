@@ -17,6 +17,7 @@ import {
 } from "@/lib/messenger/server";
 import { createAnonClient, rawRpc } from "@/lib/supabase/token-client";
 import { notifyInboundMessage } from "@/lib/notifications/server";
+import { runAutoReply } from "@/lib/agent-auto/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -108,12 +109,15 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error("messenger ingest error:", error.message);
       } else if (typeof conversationId === "string") {
-        // Alerte email au loueur (anti-rafale côté SQL, jamais bloquant).
+        // Réponse automatique (mode auto uniquement), puis alerte email au
+        // loueur — les deux sont bornés et jamais bloquants.
+        const auto = await runAutoReply({ supabase, secret, conversationId });
         await notifyInboundMessage({
           supabase,
           secret,
           conversationId,
           snippet: text,
+          autoReply: auto.replied ? (auto.replyText ?? null) : null,
         });
       }
     }

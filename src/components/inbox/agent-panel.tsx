@@ -6,11 +6,13 @@
 // demande est simple et complète en mode auto.
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowUpRight,
   Bot,
+  CalendarCheck,
   CheckCircle2,
   FileText,
   Loader2,
@@ -18,6 +20,10 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import {
+  isReadyToBook,
+  prepareBookingConversion,
+} from "@/lib/ai/booking-conversion";
 import { useAppData } from "@/components/providers/app-data-provider";
 import type { AgentAnalysis } from "@/lib/ai/agent-engine";
 import {
@@ -72,12 +78,34 @@ export function AgentPanel({
   organization: Organization;
 }) {
   const { provider } = useAppData();
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
   const currency = organization.currency;
 
   const reply = draft ?? analysis?.draftReply ?? "";
   const real = deliversForReal(conversation, provider);
+  const readyToBook = isReadyToBook(analysis);
+
+  const convert = async () => {
+    if (!analysis || converting) return;
+    setConverting(true);
+    try {
+      const ok = await prepareBookingConversion(conversation, analysis, provider);
+      if (!ok) {
+        toast.error("Conversion impossible — vérifiez la demande.");
+        return;
+      }
+      router.push("/bookings/new?from=conversation");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Conversion impossible — réessayez."
+      );
+    } finally {
+      setConverting(false);
+    }
+  };
   const closed =
     conversation.status === "replied" ||
     conversation.status === "auto_replied" ||
@@ -251,6 +279,40 @@ export function AgentPanel({
             </Row>
           )}
         </dl>
+
+        {/* Demande mûre : conversion en réservation préremplie */}
+        {readyToBook && analysis.equipment && analysis.pricing && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-emerald-900">
+              <CalendarCheck className="size-4" aria-hidden />
+              Prêt à réserver
+            </p>
+            <p className="mt-1 text-xs text-emerald-800">
+              {analysis.equipment.name} ·{" "}
+              {analysis.period ? humanPeriod(analysis.period.startAt) : ""} →{" "}
+              {analysis.period ? humanPeriod(analysis.period.endAt) : ""} ·{" "}
+              <strong>{formatMoney(analysis.pricing.total, currency)}</strong>
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="mt-2.5 w-full bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+              disabled={converting}
+              onClick={() => void convert()}
+            >
+              {converting ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <CalendarCheck className="size-4" aria-hidden />
+              )}
+              Créer la réservation
+            </Button>
+            <p className="mt-1.5 text-center text-[11px] text-emerald-800/80">
+              Formulaire prérempli — rien n&apos;est réservé sans votre
+              validation.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">

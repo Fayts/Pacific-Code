@@ -387,6 +387,43 @@ export class MockDataProvider implements DataProvider {
         internalNotes: source.internal_notes ?? "",
       });
     },
+
+    listAddons: async (equipmentId: string): Promise<EquipmentItem[]> => {
+      const db = this.load();
+      const addonIds = new Set(
+        (db.equipmentAddons ?? [])
+          .filter((l) => l.equipment_id === equipmentId)
+          .map((l) => l.addon_id)
+      );
+      return db.equipment
+        .filter((e) => addonIds.has(e.id) && !e.archived_at)
+        .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    },
+
+    setAddons: async (equipmentId: string, addonIds: string[]): Promise<void> => {
+      const db = this.load();
+      const cleaned = [...new Set(addonIds)].filter(
+        (addonId) =>
+          addonId !== equipmentId && db.equipment.some((e) => e.id === addonId)
+      );
+      db.equipmentAddons = [
+        ...(db.equipmentAddons ?? []).filter(
+          (l) => l.equipment_id !== equipmentId
+        ),
+        ...cleaned.map((addonId) => ({
+          id: uuid(),
+          equipment_id: equipmentId,
+          addon_id: addonId,
+        })),
+      ];
+      this.persist();
+    },
+
+    listAddonLinks: async () =>
+      (this.load().equipmentAddons ?? []).map((l) => ({
+        equipment_id: l.equipment_id,
+        addon_id: l.addon_id,
+      })),
   };
 
   // ----------------------------------------------------------

@@ -38,7 +38,7 @@ function bookingInput(overrides: Record<string, unknown> = {}) {
 describe("MockDataProvider — seed et persistance", () => {
   it("charge le jeu de données fictif Pacific Rent&Clean", async () => {
     const provider = makeProvider();
-    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(5);
+    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(6);
     expect((await provider.customers.list()).length).toBe(3);
     expect((await provider.bookings.list()).length).toBe(5);
     expect((await provider.organization.get())!.name).toBe("Pacific Rent&Clean");
@@ -81,8 +81,36 @@ describe("MockDataProvider — seed et persistance", () => {
       internalNotes: "",
     });
     await provider.resetDemoData();
-    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(5);
+    expect((await provider.equipment.list({ includeArchived: true })).length).toBe(6);
     expect(await provider.auth.getSession()).not.toBeNull();
+  });
+});
+
+describe("MockDataProvider — accessoires liés", () => {
+  it("le seed lie les pastilles aux deux Puzzi", async () => {
+    const provider = makeProvider();
+    const addons10 = await provider.equipment.listAddons(EQ_PUZZI10);
+    const addons8 = await provider.equipment.listAddons(EQ_PUZZI8);
+    expect(addons10.map((a) => a.name)).toContain(
+      "Pastilles détergentes RM 760 (lot de 2)"
+    );
+    expect(addons8).toHaveLength(1);
+    expect(addons8[0].pricing_mode).toBe("flat");
+  });
+
+  it("setAddons remplace l'ensemble, refuse l'auto-lien, et persiste", async () => {
+    const storage = createMemoryStorage();
+    const provider = makeProvider(storage);
+    await provider.equipment.setAddons(EQ_K5, [EQ_PUZZI8, EQ_K5, "inconnu"]);
+    const addons = await provider.equipment.listAddons(EQ_K5);
+    expect(addons.map((a) => a.id)).toEqual([EQ_PUZZI8]);
+
+    await provider.equipment.setAddons(EQ_K5, []);
+    expect(await provider.equipment.listAddons(EQ_K5)).toHaveLength(0);
+
+    const links = await makeProvider(storage).equipment.listAddonLinks();
+    expect(links.some((l) => l.equipment_id === EQ_K5)).toBe(false);
+    expect(links.filter((l) => l.addon_id !== "").length).toBeGreaterThan(0);
   });
 });
 

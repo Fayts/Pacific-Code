@@ -90,6 +90,36 @@ export type AgentAnalysis = {
 // Normalisation et détection d'intention
 // ------------------------------------------------------------
 
+// normalize / tokens / containsWord viennent de @/lib/ai/text (partagés avec
+// l'appariement de la base de connaissances).
+
+/**
+ * Retire la réponse citée d'un e-mail entrant (« Le jeu. 23 juil. 2026 …
+ * a écrit : > … ») : sans ce nettoyage, les anciens messages du fil — y
+ * compris ceux de l'agent — polluent la détection d'intention, de bien et
+ * de dates. Si tout le message n'était qu'une citation, l'original est
+ * conservé plutôt que de renvoyer un texte vide.
+ */
+export function stripQuotedReply(body: string): string {
+  let cut = body;
+  const markers = [
+    // Attribution Gmail française — souvent coupée par un retour à la ligne
+    // avant « a écrit : ».
+    /\r?\nLe\s+(?:lun|mar|mer|jeu|ven|sam|dim)\.?[\s\S]{0,140}?(?:a\s+[ée]crit|wrote)\s*:/i,
+    /\r?\n[^\r\n]{0,80}(?:a\s+[ée]crit|wrote)\s*:\s*$/im,
+  ];
+  for (const marker of markers) {
+    const match = marker.exec(cut);
+    if (match) cut = cut.slice(0, match.index);
+  }
+  const cleaned = cut
+    .split(/\r?\n/)
+    .filter((line) => !line.trimStart().startsWith(">"))
+    .join("\n")
+    .trim();
+  return cleaned || body.trim();
+}
+
 const COMPLAINT = /mecontent|insatisfait|probleme|panne|casse|arrete de fonctionner|ne fonctionne (plus|pas)|plainte|reclamation|inadmissible/;
 const CANCELLATION = /annul/;
 const DISCOUNT = /remise|reduction|geste commercial|rembours/;
@@ -201,12 +231,104 @@ function toLocalString(
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(hour)}:00`;
 }
 
+// Dates numériques françaises. Deux formes acceptées, choisies pour ne
+// JAMAIS confondre une référence de matériel (« Puzzi 10/1 ») avec une
+// date : soit un mot déclencheur juste devant (« le 27/07 », « du 27/07 »),
+// soit une année explicite (« 27/07/26 », « 27/07/2026 »). La forme
+// compacte « 270726 » exige aussi le déclencheur (« pour le 260726 »).
+const NUMERIC_DATE_KEYWORD =
+  /\b(?:le|du|au|pour|vers|des)\s+(\d{1,2})[/.\-](\d{1,2})(?:[/.\-](\d{2}|\d{4}))?\b/g;
+const NUMERIC_DATE_WITH_YEAR =
+  /\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})\b/g;
+const NUMERIC_DATE_COMPACT = /\b(?:le|du|au|pour)\s+(\d{2})(\d{2})(\d{2})\b/g;
+// « le 27 07 26 » : séparateur ESPACE, constaté chez un vrai client. Le
+// déclencheur ET l'année (jour + mois + année) sont exigés tous les deux —
+// jamais deux nombres seuls, pour ne pas confondre avec une référence.
+const NUMERIC_DATE_SPACED =
+  /\b(?:le|du|au|pour|vers|des)\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2}|\d{4})\b/g;
+
+type NumericDate = { year: number; month: number; day: number; index: number };
+
+function parseNumericDates(
+  t: string,
+  timeZone: string,
+  now: Date
+): NumericDate[] {
+  const nowParts = utcToZonedParts(now, timeZone);
+  const seen = new Map<string, NumericDate>();
+
+  const consider = (
+    dayRaw: string,
+    monthRaw: string,
+    yearRaw: string | undefined,
+    index: number
+  ) => {
+    const day = Number(dayRaw);
+    const month = Number(monthRaw);
+    if (!day || !month || day > 31 || month > 12) return;
+    let year: number;
+    if (yearRaw) {
+      year = Number(yearRaw);
+      if (year < 100) year += 2000;
+      // Année invraisemblable : ce n'était pas une date.
+      if (year < nowParts.year - 1 || year > nowParts.year + 2) return;
+    } else {
+      // Sans année : la prochaine occurrence.
+      year = nowParts.year;
+      if (
+        month < nowParts.month ||
+        (month === nowParts.month && day < nowParts.day)
+      ) {
+        year += 1;
+      }
+    }
+    const key = `${year}-${month}-${day}`;
+    if (!seen.has(key)) seen.set(key, { year, month, day, index });
+  };
+
+  for (const pattern of [
+    NUMERIC_DATE_KEYWORD,
+    NUMERIC_DATE_WITH_YEAR,
+    NUMERIC_DATE_COMPACT,
+    NUMERIC_DATE_SPACED,
+  ]) {
+    pattern.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(t)) !== null) {
+      consider(match[1], match[2], match[3], match.index);
+    }
+  }
+
+  // Ordre d'apparition dans le message, deux dates au plus (début / fin).
+  return [...seen.values()].sort((a, b) => a.index - b.index).slice(0, 2);
+}
+
 export function parseRequestPeriod(
   text: string,
   timeZone: string,
   now: Date = new Date()
 ): AgentPeriod | null {
   const t = normalize(text);
+
+  // Les dates numériques explicites priment sur les mots relatifs.
+  const numeric = parseNumericDates(t, timeZone, now);
+  if (numeric.length > 0) {
+    let [start, end] = [numeric[0], numeric[1] ?? numeric[0]];
+    const ordinal = (d: NumericDate) =>
+      d.year * 10_000 + d.month * 100 + d.day;
+    if (ordinal(end) < ordinal(start)) [start, end] = [end, start];
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const label =
+      ordinal(start) === ordinal(end)
+        ? `le ${pad(start.day)}/${pad(start.month)}`
+        : `du ${pad(start.day)}/${pad(start.month)} au ${pad(end.day)}/${pad(end.month)}`;
+    return {
+      startAt: toLocalString(start, 8),
+      endAt: toLocalString(end, 17),
+      label,
+    };
+  }
+
   const found: DayToken[] = [];
   DAY_PATTERN.lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -334,7 +456,7 @@ export async function analyzeConversation(
     conversation.subject ?? "",
     ...messages
       .filter((m) => m.direction === "inbound")
-      .map((m) => m.body),
+      .map((m) => stripQuotedReply(m.body)),
   ].join("\n");
   const t = normalize(inboundText);
 

@@ -11,7 +11,12 @@ import { ArrowLeft, Inbox, Plug } from "lucide-react";
 import { toast } from "sonner";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { analyzeConversation, type AgentAnalysis } from "@/lib/ai/agent-engine";
-import { deleteConversation } from "@/lib/services/inbox-service";
+import { isReadyToBook, OPEN_STATUSES } from "@/lib/ai/booking-conversion";
+import {
+  deleteConversation,
+  updateAgentSettings,
+} from "@/lib/services/inbox-service";
+import { Switch } from "@/components/ui/switch";
 import type { AgentSettings, InboxMessage } from "@/lib/types/inbox";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -72,9 +77,27 @@ export function InboxClient() {
         conversations.map(async (conversation) => {
           const thread = await provider.inbox.listMessages(conversation.id);
           const last = thread[thread.length - 1];
+          // Badge « Prêt à réserver » : analyse locale (règles, zéro IA),
+          // uniquement pour les conversations encore ouvertes.
+          let readyToBook = false;
+          if (
+            organization &&
+            (OPEN_STATUSES as readonly string[]).includes(conversation.status)
+          ) {
+            try {
+              const analysis = await analyzeConversation(
+                { conversation, messages: thread },
+                { provider, organization, settings }
+              );
+              readyToBook = isReadyToBook(analysis);
+            } catch {
+              // Analyse impossible : pas de badge, la liste reste utilisable.
+            }
+          }
           return {
             conversation,
             snippet: last ? last.body.replace(/\s+/g, " ") : "",
+            readyToBook,
           };
         })
       );
@@ -83,7 +106,7 @@ export function InboxClient() {
     return () => {
       cancelled = true;
     };
-  }, [provider, version, tick]);
+  }, [provider, organization, version, tick]);
 
   // Fil + analyse de la conversation sélectionnée.
   useEffect(() => {
@@ -153,16 +176,56 @@ export function InboxClient() {
     toast.success("Conversation supprimée.");
   };
 
+  const autoMode = data.settings.mode === "auto";
+  const toggleAutoMode = async (checked: boolean) => {
+    const result = await updateAgentSettings(
+      { mode: checked ? "auto" : "assisted" },
+      provider
+    );
+    if (!result.ok) {
+      toast.error(result.error ?? "Réglage impossible — réessayez.");
+      return;
+    }
+    toast.success(
+      checked
+        ? "Réponse automatique activée : l'agent répond seul aux demandes simples, même app fermée."
+        : "Réponse automatique désactivée : l'agent prépare tout, vous validez chaque envoi."
+    );
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Boîte de réception"
         description="Toutes vos demandes — Messenger, Gmail, WhatsApp, formulaire — traitées par votre agent IA."
         actions={
-          <Button variant="outline" render={<Link href="/assistant/connections" />}>
-            <Plug className="size-4" aria-hidden />
-            Canaux et réglages
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 transition-colors",
+                autoMode
+                  ? "border-pc-turquoise/40 bg-pc-turquoise/[0.07]"
+                  : "border-border"
+              )}
+            >
+              <Switch checked={autoMode} onCheckedChange={toggleAutoMode} />
+              <span className="text-sm">
+                <span className="font-medium text-foreground">
+                  Réponse automatique
+                </span>
+                <span className="hidden text-muted-foreground sm:inline">
+                  {autoMode ? " — active" : " — désactivée"}
+                </span>
+              </span>
+            </label>
+            <Button
+              variant="outline"
+              render={<Link href="/assistant/connections" />}
+            >
+              <Plug className="size-4" aria-hidden />
+              Canaux et réglages
+            </Button>
+          </div>
         }
       />
 

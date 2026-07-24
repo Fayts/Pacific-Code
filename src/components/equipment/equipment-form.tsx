@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CategoryDialog } from "@/components/equipment/category-dialog";
+import { AddonsPicker } from "@/components/equipment/addons-picker";
 import { useAppData } from "@/components/providers/app-data-provider";
 import {
   createEquipment,
@@ -67,6 +68,19 @@ export function EquipmentForm({
   );
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  // Accessoires payants liés (appliqués à l'enregistrement).
+  const [addonIds, setAddonIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!equipment) return;
+    let cancelled = false;
+    provider.equipment.listAddons(equipment.id).then((addons) => {
+      if (!cancelled) setAddonIds(addons.map((a) => a.id));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [provider, equipment]);
 
   const pickPhoto = async (file: File | undefined) => {
     if (!file) return;
@@ -158,12 +172,25 @@ export function EquipmentForm({
       }
       values = { ...values, photoUrl };
 
+      const saveAddons = async (equipmentId: string) => {
+        try {
+          await provider.equipment.setAddons(equipmentId, addonIds);
+        } catch (err) {
+          toast.error(
+            err instanceof Error
+              ? `Accessoires non enregistrés : ${err.message}`
+              : "Accessoires non enregistrés — rouvrez la fiche."
+          );
+        }
+      };
+
       if (equipment) {
         const result = await updateEquipment(equipment.id, values, provider);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
+        await saveAddons(equipment.id);
         toast.success("Matériel mis à jour");
         router.push(`/equipment/${equipment.id}`);
         return;
@@ -175,6 +202,7 @@ export function EquipmentForm({
         return;
       }
 
+      await saveAddons(result.data.equipmentId);
       toast.success("Matériel créé");
       router.push(`/equipment/${result.data.equipmentId}`);
     });
@@ -463,6 +491,20 @@ export function EquipmentForm({
               )}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Accessoires payants</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AddonsPicker
+            excludeId={equipment?.id}
+            selected={addonIds}
+            onChange={setAddonIds}
+            currency={currency}
+          />
         </CardContent>
       </Card>
 

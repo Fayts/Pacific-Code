@@ -7,8 +7,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Inbox } from "lucide-react";
 import { useAppData } from "@/components/providers/app-data-provider";
+import {
+  consumeBookingPrefill,
+  type BookingPrefill,
+} from "@/lib/ai/booking-conversion";
 import {
   toLocalDateTimeInput,
   utcToZonedParts,
@@ -31,6 +35,10 @@ export function BookingNewClient() {
   const { provider, organization, version } = useAppData();
   const searchParams = useSearchParams();
   const [data, setData] = useState<NewData | null>(null);
+  // Préremplissage déposé par la boîte de réception (consommé une fois).
+  const [prefill] = useState<BookingPrefill | null>(() =>
+    typeof window !== "undefined" ? consumeBookingPrefill() : null
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +105,26 @@ export function BookingNewClient() {
     tz
   );
 
+  // Préremplissage validé contre les données réellement chargées.
+  const prefillValues =
+    prefill &&
+    data.customers.some((c) => c.id === prefill.customerId) &&
+    prefill.items.every((item) =>
+      data.equipment.some((e) => e.id === item.equipmentId)
+    )
+      ? {
+          customerId: prefill.customerId,
+          items: prefill.items,
+          startAt: prefill.startAt,
+          endAt: prefill.endAt,
+          discountAmount: 0,
+          extraFeesAmount: 0,
+          depositAmount: prefill.depositAmount,
+          notes: prefill.notes,
+          status: "pending" as const,
+        }
+      : undefined;
+
   return (
     <div>
       <Link
@@ -110,6 +138,13 @@ export function BookingNewClient() {
         title="Nouvelle réservation"
         description="Choisissez le client, le matériel et la période — la disponibilité est vérifiée automatiquement."
       />
+      {prefillValues && (
+        <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-2.5 text-sm text-emerald-900">
+          <Inbox className="size-4 shrink-0" aria-hidden />
+          Formulaire prérempli depuis la conversation — vérifiez puis
+          enregistrez.
+        </div>
+      )}
       <BookingForm
         mode="create"
         organization={{
@@ -121,6 +156,7 @@ export function BookingNewClient() {
         defaultStartAt={defaultStartAt}
         defaultEndAt={defaultEndAt}
         initialCustomerId={initialCustomerId}
+        initialValues={prefillValues}
       />
     </div>
   );

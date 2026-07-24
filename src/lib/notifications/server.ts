@@ -59,6 +59,8 @@ export async function notifyInboundMessage(params: {
   conversationId: string;
   /** Extrait du message reçu, affiché dans l'alerte. */
   snippet: string;
+  /** Texte envoyé par l'agent si une réponse automatique est partie. */
+  autoReply?: string | null;
 }): Promise<void> {
   try {
     const { supabase, secret, conversationId } = params;
@@ -124,8 +126,15 @@ export async function notifyInboundMessage(params: {
     // du pilote) : son objet distinctif et son lien direct la démarquent
     // du message d'origine.
     const channelLabel = CHANNEL_LABELS[claim.channel] ?? claim.channel;
-    const subject = `${claim.customer_name} vous a écrit (${channelLabel}) — Pacific Code`;
+    const autoReplied = Boolean(params.autoReply?.trim());
+    const subject = autoReplied
+      ? `${claim.customer_name} — l'agent a répondu (${channelLabel}) — Pacific Code`
+      : `${claim.customer_name} vous a écrit (${channelLabel}) — Pacific Code`;
     const snippet = params.snippet.replace(/\s+/g, " ").trim().slice(0, 300);
+    const autoSnippet = (params.autoReply ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 300);
     const body = [
       `Nouveau message reçu sur ${channelLabel}.`,
       "",
@@ -133,7 +142,13 @@ export async function notifyInboundMessage(params: {
       ...(claim.subject ? [`Objet : ${claim.subject}`] : []),
       `Message : ${snippet}${params.snippet.length > 300 ? "…" : ""}`,
       "",
-      `Répondre : ${appBaseUrl()}/inbox?c=${conversationId}`,
+      ...(autoReplied
+        ? [
+            `✓ L'agent a répondu automatiquement : « ${autoSnippet} »`,
+            "",
+            `Vérifier : ${appBaseUrl()}/inbox?c=${conversationId}`,
+          ]
+        : [`Répondre : ${appBaseUrl()}/inbox?c=${conversationId}`]),
       "",
       "— Pacific Code (notification automatique ; réglable dans Assistant → Connexions)",
     ].join("\n");

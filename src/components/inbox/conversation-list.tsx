@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 export type ConversationListItem = {
   conversation: InboxConversation;
   snippet: string;
+  /** L'agent a réuni bien + dates + dispo : convertible en réservation. */
+  readyToBook?: boolean;
 };
 
 /** « il y a 5 min », « il y a 3 h », sinon la date courte. */
@@ -45,7 +47,7 @@ export function ConversationList({
 }) {
   return (
     <ul className="divide-y divide-border">
-      {items.map(({ conversation, snippet }) => {
+      {items.map(({ conversation, snippet, readyToBook }) => {
         const active = conversation.id === selectedId;
         return (
           // La corbeille est un FRÈRE du bouton de ligne (jamais imbriquée :
@@ -80,8 +82,13 @@ export function ConversationList({
                 <span className="block truncate text-xs text-muted-foreground">
                   {snippet}
                 </span>
-                <span className="mt-1.5 block">
+                <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <ConversationStatusBadge status={conversation.status} />
+                  {readyToBook && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                      Prêt à réserver
+                    </span>
+                  )}
                 </span>
               </span>
             </button>
