@@ -87,6 +87,33 @@ function normalize(text: string): string {
     .replace(new RegExp("[\\u2019\\u2018]", "g"), "'");
 }
 
+/**
+ * Retire la réponse citée d'un e-mail entrant (« Le jeu. 23 juil. 2026 …
+ * a écrit : > … ») : sans ce nettoyage, les anciens messages du fil — y
+ * compris ceux de l'agent — polluent la détection d'intention, de bien et
+ * de dates. Si tout le message n'était qu'une citation, l'original est
+ * conservé plutôt que de renvoyer un texte vide.
+ */
+export function stripQuotedReply(body: string): string {
+  let cut = body;
+  const markers = [
+    // Attribution Gmail française — souvent coupée par un retour à la ligne
+    // avant « a écrit : ».
+    /\r?\nLe\s+(?:lun|mar|mer|jeu|ven|sam|dim)\.?[\s\S]{0,140}?(?:a\s+[ée]crit|wrote)\s*:/i,
+    /\r?\n[^\r\n]{0,80}(?:a\s+[ée]crit|wrote)\s*:\s*$/im,
+  ];
+  for (const marker of markers) {
+    const match = marker.exec(cut);
+    if (match) cut = cut.slice(0, match.index);
+  }
+  const cleaned = cut
+    .split(/\r?\n/)
+    .filter((line) => !line.trimStart().startsWith(">"))
+    .join("\n")
+    .trim();
+  return cleaned || body.trim();
+}
+
 const COMPLAINT = /mecontent|insatisfait|probleme|panne|casse|arrete de fonctionner|ne fonctionne (plus|pas)|plainte|reclamation|inadmissible/;
 const CANCELLATION = /annul/;
 const DISCOUNT = /remise|reduction|geste commercial|rembours/;
@@ -222,6 +249,11 @@ const NUMERIC_DATE_KEYWORD =
 const NUMERIC_DATE_WITH_YEAR =
   /\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})\b/g;
 const NUMERIC_DATE_COMPACT = /\b(?:le|du|au|pour)\s+(\d{2})(\d{2})(\d{2})\b/g;
+// « le 27 07 26 » : séparateur ESPACE, constaté chez un vrai client. Le
+// déclencheur ET l'année (jour + mois + année) sont exigés tous les deux —
+// jamais deux nombres seuls, pour ne pas confondre avec une référence.
+const NUMERIC_DATE_SPACED =
+  /\b(?:le|du|au|pour|vers|des)\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2}|\d{4})\b/g;
 
 type NumericDate = { year: number; month: number; day: number; index: number };
 
@@ -266,6 +298,7 @@ function parseNumericDates(
     NUMERIC_DATE_KEYWORD,
     NUMERIC_DATE_WITH_YEAR,
     NUMERIC_DATE_COMPACT,
+    NUMERIC_DATE_SPACED,
   ]) {
     pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -431,7 +464,7 @@ export async function analyzeConversation(
     conversation.subject ?? "",
     ...messages
       .filter((m) => m.direction === "inbound")
-      .map((m) => m.body),
+      .map((m) => stripQuotedReply(m.body)),
   ].join("\n");
   const t = normalize(inboundText);
 
